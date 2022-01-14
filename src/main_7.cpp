@@ -23,10 +23,12 @@
 #include "stb_image.h"
 #include "Texture.h"
 
+using namespace std;
+
 //obliczyc kwateriony nastepnie interpolowac.
 
 
-std::vector<glm::vec3> keyPoints({
+vector<glm::vec3> keyPoints({
 glm::vec3(-711.745f, 89.9272f, -626.537f),
 //glm::vec3(-711.745f, 91.9272f, -606.537f),
 glm::vec3(-687.635f, 100.428f, -503.943f),
@@ -48,7 +50,7 @@ glm::vec3(8.72873f, 104.983f, -132.435f),
 glm::vec3(8.72873f, 100.983f, -132.435f),
 	});
 
-std::vector<glm::quat> keyRotation;
+vector<glm::quat> keyRotation;
 
 int index = 0;
 bool FOLLOW_CAR = false;
@@ -57,6 +59,97 @@ GLuint program;
 GLuint programTextureSpecular;
 GLuint programTexture;
 GLuint programSun;
+
+GLuint skyboxShader;
+GLuint skyboxVAO, skyboxVBO;
+float skyboxVertices[] = {
+	// positions          
+	-11.0f,  11.0f, -11.0f,
+	-11.0f, -11.0f, -11.0f,
+	 11.0f, -11.0f, -11.0f,
+	 11.0f, -11.0f, -11.0f,
+	 11.0f,  11.0f, -11.0f,
+	-11.0f,  11.0f, -11.0f,
+
+	-11.0f, -11.0f,  11.0f,
+	-11.0f, -11.0f, -11.0f,
+	-11.0f,  11.0f, -11.0f,
+	-11.0f,  11.0f, -11.0f,
+	-11.0f,  11.0f,  11.0f,
+	-11.0f, -11.0f,  11.0f,
+
+	 11.0f, -11.0f, -11.0f,
+	 11.0f, -11.0f,  11.0f,
+	 11.0f,  11.0f,  11.0f,
+	 11.0f,  11.0f,  11.0f,
+	 11.0f,  11.0f, -11.0f,
+	 11.0f, -11.0f, -11.0f,
+
+	-11.0f, -11.0f,  11.0f,
+	-11.0f,  11.0f,  11.0f,
+	 11.0f,  11.0f,  11.0f,
+	 11.0f,  11.0f,  11.0f,
+	 11.0f, -11.0f,  11.0f,
+	-11.0f, -11.0f,  11.0f,
+
+	-11.0f,  11.0f, -11.0f,
+	 11.0f,  11.0f, -11.0f,
+	 11.0f,  11.0f,  11.0f,
+	 11.0f,  11.0f,  11.0f,
+	-11.0f,  11.0f,  11.0f,
+	-11.0f,  11.0f, -11.0f,
+
+	-11.0f, -11.0f, -11.0f,
+	-11.0f, -11.0f,  11.0f,
+	 11.0f, -11.0f, -11.0f,
+	 11.0f, -11.0f, -11.0f,
+	-11.0f, -11.0f,  11.0f,
+	 11.0f, -11.0f,  11.0f
+};
+
+vector<string> faces
+{
+	"./textures/skybox/right.jpg",
+		"./textures/skybox/left.jpg",
+		"./textures/skybox/top.jpg",
+		"./textures/skybox/bottom.jpg",
+		"./textures/skybox/front.jpg",
+		"./textures/skybox/back.jpg"
+};
+unsigned int loadCubemap(vector<string> faces)
+{
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+			);
+			stbi_image_free(data);
+		}
+		else
+		{
+			cout << "Cubemap tex failed to load at path: " << faces[i] << endl;
+			stbi_image_free(data);
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+}
+unsigned int cubemapTexture = loadCubemap(faces);
+
+
 Core::Shader_Loader shaderLoader;
 
 
@@ -64,11 +157,11 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext armContext;
 
 
-std::vector<Core::RenderContext> armContexts;
+vector<Core::RenderContext> armContexts;
 
-std::vector<Core::Node> city;
+vector<Core::Node> city;
 
-std::vector<Core::Node> car;
+vector<Core::Node> car;
 
 
 float cameraAngle = 0;
@@ -153,7 +246,7 @@ glm::mat4 createCameraMatrix()
 glm::mat4 animationMatrix(float time) {
 	float speed = 1.;
 	time = time * speed;
-	std::vector<float> distances;
+	vector<float> distances;
 	float timeStep = 0;
 	for (int i = 0; i < keyPoints.size() - 1; i++) {
 		timeStep += (keyPoints[i] - keyPoints[i + 1]).length();
@@ -212,7 +305,7 @@ void drawObject(GLuint program, Core::RenderContext context, glm::mat4 modelMatr
 	context.render();
 }
 
-void renderRecursive(std::vector<Core::Node>& nodes) {
+void renderRecursive(vector<Core::Node>& nodes) {
 	for (auto node : nodes) {
 		if (node.renderContexts.size() == 0) {
 			continue;
@@ -258,17 +351,15 @@ void renderScene()
 	// Aktualizacja macierzy widoku i rzutowania. Macierze sa przechowywane w zmiennych globalnych, bo uzywa ich funkcja drawObject.
 	// (Bardziej elegancko byloby przekazac je jako argumenty do funkcji, ale robimy tak dla uproszczenia kodu.
 	//  Jest to mozliwe dzieki temu, ze macierze widoku i rzutowania sa takie same dla wszystkich obiektow!)
+	
 	cameraMatrix = createCameraMatrix();
 	perspectiveMatrix = Core::createPerspectiveMatrix(0.1, 2000);
+
 	float time = glutGet(GLUT_ELAPSED_TIME) / 1000.f;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0f, 0.03f, 0.1f, 1.0f);
-
-
-
-
-
+		
 	if (FOLLOW_CAR) {
 		cameraMatrix = followCarCamera(time);
 	}
@@ -281,12 +372,24 @@ void renderScene()
 			time -= 3;
 		}
 	}
+	
+	// draw skybox as last
+	glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+	glUseProgram(skyboxShader);
+	glUniform1i(glGetUniformLocation(skyboxShader, "skybox"), 0);
+	glm::mat4 transformation = perspectiveMatrix * glm::mat4(glm::mat3(cameraMatrix));
+	glUniformMatrix4fv(glGetUniformLocation(skyboxShader, "projectionView"), 1, GL_FALSE, (float*)&transformation);
+	// skybox cube
+	glBindVertexArray(skyboxVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS); // set depth function back to default
+	
 	glUseProgram(0);
 	glutSwapBuffers();
 }
-
-
-
 
 Core::Material* loadDiffuseMaterial(aiMaterial* material) {
 	aiString colorPath;
@@ -303,7 +406,6 @@ Core::Material* loadDiffuseMaterial(aiMaterial* material) {
 
 	return result;
 }
-
 
 Core::Material* loadDiffuseSpecularMaterial(aiMaterial* material) {
 	aiString colorPath;
@@ -323,8 +425,7 @@ Core::Material* loadDiffuseSpecularMaterial(aiMaterial* material) {
 	return result;
 }
 
-
-void loadRecusive(const aiScene* scene, aiNode* node, std::vector<Core::Node>& nodes, std::vector<Core::Material*> materialsVector, int parentIndex) {
+void loadRecusive(const aiScene* scene, aiNode* node, vector<Core::Node>& nodes, vector<Core::Material*> materialsVector, int parentIndex) {
 	int index = nodes.size();
 	nodes.push_back(Core::Node());
 	nodes[index].parent = parentIndex;
@@ -339,7 +440,7 @@ void loadRecusive(const aiScene* scene, aiNode* node, std::vector<Core::Node>& n
 		loadRecusive(scene, node->mChildren[i], nodes, materialsVector, index);
 	}
 }
-void loadRecusive(const aiScene* scene, std::vector<Core::Node>& nodes, std::vector<Core::Material*> materialsVector) {
+void loadRecusive(const aiScene* scene, vector<Core::Node>& nodes, vector<Core::Material*> materialsVector) {
 
 	loadRecusive(scene, scene->mRootNode, nodes, materialsVector, -1);
 }
@@ -348,18 +449,14 @@ void initModels() {
 	Assimp::Importer importer;
 	//replace to get more buildings, unrecomdnded
 	const aiScene* scene = importer.ReadFile("models/blade-runner-style-cityscapes.fbx", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-	//const aiScene* scene = importer.ReadFile("models/city_small.fbx", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-	//const aiScene* scene = importer.ReadFile("models/city_light.fbx", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 	{
-		std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+		cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
 		return;
 	}
 
-
-
-	std::vector<Core::Material*> materialsVector;
+	vector<Core::Material*> materialsVector;
 
 	for (int i = 0; i < scene->mNumMaterials; i++) {
 		materialsVector.push_back(loadDiffuseSpecularMaterial(scene->mMaterials[i]));
@@ -373,7 +470,7 @@ void initModels() {
 	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 	{
-		std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+		cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
 		return;
 	}
 	materialsVector.clear();
@@ -391,8 +488,8 @@ void initModels() {
 
 	//for (int i = 0; i < root->mNumChildren; i++) {
 	//	auto node = root->mChildren[i];
-	//	std::cout << "glm::vec3(" << node->mTransformation.a4 << "f, " << node->mTransformation.b4 << "f, " << node->mTransformation.c4 << "f), " << std::endl;
-	//	//std::cout << node->mName.C_Str() << std::endl;
+	//	cout << "glm::vec3(" << node->mTransformation.a4 << "f, " << node->mTransformation.b4 << "f, " << node->mTransformation.c4 << "f), " << endl;
+	//	//cout << node->mName.C_Str() << endl;
 	//}
 }
 
@@ -411,24 +508,39 @@ void initKeyRoation() {
 	keyRotation.push_back(glm::quat(1,0,0,0));
 }
 
+void createSkybox() {
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+}
+
 void init()
 {
-
 	glEnable(GL_DEPTH_TEST);
 	program = shaderLoader.CreateProgram("shaders/shader_4_1.vert", "shaders/shader_4_1.frag");
 	programTextureSpecular = shaderLoader.CreateProgram("shaders/shader_spec_tex.vert", "shaders/shader_spec_tex.frag");
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex_2.vert", "shaders/shader_tex_2.frag");
 	programSun = shaderLoader.CreateProgram("shaders/shader_4_sun.vert", "shaders/shader_4_sun.frag");
-
+	skyboxShader = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
 	initModels();
-
 	initKeyRoation();
-
+	// cube VAO
+	cubemapTexture = loadCubemap(faces);
+	// skybox VAO
+	createSkybox();
 }
 
 void shutdown()
 {
 	shaderLoader.DeleteProgram(program);
+	shaderLoader.DeleteProgram(programTextureSpecular);
+	shaderLoader.DeleteProgram(programTexture);
+	shaderLoader.DeleteProgram(programSun);
+	shaderLoader.DeleteProgram(skyboxShader);
 }
 
 void idle()
