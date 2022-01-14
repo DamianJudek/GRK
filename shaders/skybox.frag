@@ -23,5 +23,6 @@ float logisticDepth(float depth, float steepness = 0.5f, float offset = 3.0f)
 void main()
 {   
 	float depth = logisticDepth(gl_FragCoord.z);
-    FragColor = texture(skybox, TexCoords) * (1.0f - depth) + vec4(depth * vec3(5.0f/255.0f, 35.0f/255.0f, 95.0f/255.0f), 1.0f);
+   // FragColor = texture(skybox, TexCoords) * (1.0f - depth) + vec4(depth * vec3(5.0f/255.0f, 35.0f/255.0f, 95.0f/255.0f), 1.0f);
+	FragColor = texture(skybox, TexCoords);
 }

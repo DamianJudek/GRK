@@ -62,51 +62,51 @@ GLuint programSun;
 
 GLuint skyboxShader;
 GLuint skyboxVAO, skyboxVBO;
+float skyboxSize = 200.0f;
+
 float skyboxVertices[] = {
-	// positions          
-	-11.0f,  11.0f, -11.0f,
-	-11.0f, -11.0f, -11.0f,
-	 11.0f, -11.0f, -11.0f,
-	 11.0f, -11.0f, -11.0f,
-	 11.0f,  11.0f, -11.0f,
-	-11.0f,  11.0f, -11.0f,
+	-skyboxSize,  skyboxSize, -skyboxSize,
+	-skyboxSize, -skyboxSize, -skyboxSize,
+	 skyboxSize, -skyboxSize, -skyboxSize,
+	 skyboxSize, -skyboxSize, -skyboxSize,
+	 skyboxSize,  skyboxSize, -skyboxSize,
+	-skyboxSize,  skyboxSize, -skyboxSize,
 
-	-11.0f, -11.0f,  11.0f,
-	-11.0f, -11.0f, -11.0f,
-	-11.0f,  11.0f, -11.0f,
-	-11.0f,  11.0f, -11.0f,
-	-11.0f,  11.0f,  11.0f,
-	-11.0f, -11.0f,  11.0f,
+	-skyboxSize, -skyboxSize,  skyboxSize,
+	-skyboxSize, -skyboxSize, -skyboxSize,
+	-skyboxSize,  skyboxSize, -skyboxSize,
+	-skyboxSize,  skyboxSize, -skyboxSize,
+	-skyboxSize,  skyboxSize,  skyboxSize,
+	-skyboxSize, -skyboxSize,  skyboxSize,
 
-	 11.0f, -11.0f, -11.0f,
-	 11.0f, -11.0f,  11.0f,
-	 11.0f,  11.0f,  11.0f,
-	 11.0f,  11.0f,  11.0f,
-	 11.0f,  11.0f, -11.0f,
-	 11.0f, -11.0f, -11.0f,
+	 skyboxSize, -skyboxSize, -skyboxSize,
+	 skyboxSize, -skyboxSize,  skyboxSize,
+	 skyboxSize,  skyboxSize,  skyboxSize,
+	 skyboxSize,  skyboxSize,  skyboxSize,
+	 skyboxSize,  skyboxSize, -skyboxSize,
+	 skyboxSize, -skyboxSize, -skyboxSize,
 
-	-11.0f, -11.0f,  11.0f,
-	-11.0f,  11.0f,  11.0f,
-	 11.0f,  11.0f,  11.0f,
-	 11.0f,  11.0f,  11.0f,
-	 11.0f, -11.0f,  11.0f,
-	-11.0f, -11.0f,  11.0f,
+	-skyboxSize, -skyboxSize,  skyboxSize,
+	-skyboxSize,  skyboxSize,  skyboxSize,
+	 skyboxSize,  skyboxSize,  skyboxSize,
+	 skyboxSize,  skyboxSize,  skyboxSize,
+	 skyboxSize, -skyboxSize,  skyboxSize,
+	-skyboxSize, -skyboxSize,  skyboxSize,
 
-	-11.0f,  11.0f, -11.0f,
-	 11.0f,  11.0f, -11.0f,
-	 11.0f,  11.0f,  11.0f,
-	 11.0f,  11.0f,  11.0f,
-	-11.0f,  11.0f,  11.0f,
-	-11.0f,  11.0f, -11.0f,
+	-skyboxSize,  skyboxSize, -skyboxSize,
+	 skyboxSize,  skyboxSize, -skyboxSize,
+	 skyboxSize,  skyboxSize,  skyboxSize,
+	 skyboxSize,  skyboxSize,  skyboxSize,
+	-skyboxSize,  skyboxSize,  skyboxSize,
+	-skyboxSize,  skyboxSize, -skyboxSize,
 
-	-11.0f, -11.0f, -11.0f,
-	-11.0f, -11.0f,  11.0f,
-	 11.0f, -11.0f, -11.0f,
-	 11.0f, -11.0f, -11.0f,
-	-11.0f, -11.0f,  11.0f,
-	 11.0f, -11.0f,  11.0f
+	-skyboxSize, -skyboxSize, -skyboxSize,
+	-skyboxSize, -skyboxSize,  skyboxSize,
+	 skyboxSize, -skyboxSize, -skyboxSize,
+	 skyboxSize, -skyboxSize, -skyboxSize,
+	-skyboxSize, -skyboxSize,  skyboxSize,
+	 skyboxSize, -skyboxSize,  skyboxSize
 };
-
 vector<string> faces
 {
 	"./textures/skybox/right.jpg",
@@ -359,20 +359,7 @@ void renderScene()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0f, 0.03f, 0.1f, 1.0f);
-		
-	if (FOLLOW_CAR) {
-		cameraMatrix = followCarCamera(time);
-	}
 
-	renderRecursive(city);
-	for (int i = 0; i < 30; i++) {
-		if (time > -10) {
-			car[0].matrix = animationMatrix(time + 15);;
-			renderRecursive(car);
-			time -= 3;
-		}
-	}
-	
 	// draw skybox as last
 	glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
 	glUseProgram(skyboxShader);
@@ -386,6 +373,19 @@ void renderScene()
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS); // set depth function back to default
+		
+	if (FOLLOW_CAR) {
+		cameraMatrix = followCarCamera(time);
+	}
+
+	renderRecursive(city);
+	for (int i = 0; i < 30; i++) {
+		if (time > -10) {
+			car[0].matrix = animationMatrix(time + 15);;
+			renderRecursive(car);
+			time -= 3;
+		}
+	}
 	
 	glUseProgram(0);
 	glutSwapBuffers();
@@ -526,12 +526,12 @@ void init()
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex_2.vert", "shaders/shader_tex_2.frag");
 	programSun = shaderLoader.CreateProgram("shaders/shader_4_sun.vert", "shaders/shader_4_sun.frag");
 	skyboxShader = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
-	initModels();
-	initKeyRoation();
 	// cube VAO
 	cubemapTexture = loadCubemap(faces);
 	// skybox VAO
 	createSkybox();
+	initModels();
+	initKeyRoation();
 }
 
 void shutdown()
