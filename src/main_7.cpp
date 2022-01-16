@@ -12,27 +12,18 @@
 #include "Shader_Loader.h"
 #include "Render_Utils.h"
 #include "Camera.h"
-
-
 #include "Box.cpp"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-//#include <assimp/pbrmaterial.h>
-
 #include "stb_image.h"
 #include "Texture.h"
 
 using namespace std;
 
-//obliczyc kwateriony nastepnie interpolowac.
-
-
 vector<glm::vec3> keyPoints({
 glm::vec3(-711.745f, 89.9272f, -626.537f),
-//glm::vec3(-711.745f, 91.9272f, -606.537f),
 glm::vec3(-687.635f, 100.428f, -503.943f),
-//glm::vec3(-721.365f, 103.613f, -598.223f),
 glm::vec3(-667.635f, 128.428f, -433.943f),
 glm::vec3(-547.654f, 180.445f, -401.846f),
 glm::vec3(-365.357f, 261.268f, -304.93f),
@@ -48,7 +39,7 @@ glm::vec3(8.72873f, 135.983f, -130.435f),
 glm::vec3(8.72873f, 115.983f, -132.435f),
 glm::vec3(8.72873f, 104.983f, -132.435f),
 glm::vec3(8.72873f, 100.983f, -132.435f),
-	});
+});
 
 vector<glm::quat> keyRotation;
 
@@ -116,6 +107,7 @@ vector<string> faces
 		"./textures/skybox/front.jpg",
 		"./textures/skybox/back.jpg"
 };
+
 unsigned int loadCubemap(vector<string> faces)
 {
 	unsigned int textureID;
@@ -149,13 +141,9 @@ unsigned int loadCubemap(vector<string> faces)
 }
 unsigned int cubemapTexture = loadCubemap(faces);
 
-
 Core::Shader_Loader shaderLoader;
 
-
-
 Core::RenderContext armContext;
-
 
 vector<Core::RenderContext> armContexts;
 
@@ -163,25 +151,20 @@ vector<Core::Node> city;
 
 vector<Core::Node> car;
 
-
 float cameraAngle = 0;
 glm::vec3 cameraSide;
 glm::vec3 cameraDir;
 glm::vec3 cameraPos = keyPoints[0] + glm::vec3(0, 10, -5);
-
 glm::mat4 cameraMatrix, perspectiveMatrix;
-
-
-
 float old_x, old_y = -1;
 float delta_x, delta_y = 0;
 glm::quat rotationCamera = glm::quat(1, 0, 0, 0);
-//glm::quat rotation_y;
-//glm::quat rotation_x;// = glm::angleAxis(glm::pi<float>() * 0.25f, glm::vec3(0, 1, 0));
 glm::quat rotation_y = glm::normalize(glm::angleAxis(209 * 0.03f, glm::vec3(1, 0, 0)));
 glm::quat rotation_x = glm::normalize(glm::angleAxis(307 * 0.03f, glm::vec3(0, 1, 0)));
 float dy = 0;
 float dx = 0;
+
+glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
 
 void keyboard(unsigned char key, int x, int y)
 {
@@ -202,8 +185,6 @@ void keyboard(unsigned char key, int x, int y)
 	case 'r': cameraPos = glm::vec3(0,0,1); break;
 	}
 }
-
-glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
 
 
 void mouse(int x, int y)
@@ -226,10 +207,8 @@ glm::mat4 createCameraMatrix()
 	dx += delta_x;
 	delta_x = 0;
 	delta_y = 0;
-
 	rotation_x = glm::normalize(rot_x * rotation_x);
 	rotation_y = glm::normalize(rot_y * rotation_y);
-
 	rotationCamera = glm::normalize(rotation_y * rotation_x);
 
 	auto inverse_rot = glm::inverse(rotationCamera);
@@ -237,12 +216,12 @@ glm::mat4 createCameraMatrix()
 	cameraDir = inverse_rot * glm::vec3(0, 0, -1);
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	cameraSide = inverse_rot * glm::vec3(1, 0, 0);
-
 	glm::mat4 cameraTranslation;
 	cameraTranslation[3] = glm::vec4(-cameraPos, 1.0f);
 
 	return glm::mat4_cast(rotationCamera) * cameraTranslation;
 }
+
 glm::mat4 animationMatrix(float time) {
 	float speed = 1.;
 	time = time * speed;
@@ -254,7 +233,6 @@ glm::mat4 animationMatrix(float time) {
 	}
 	time = fmod(time, timeStep);
 
-	//index of first keyPoint
 	int index = 0;
 
 	while (distances[index] <= time) {
@@ -262,16 +240,10 @@ glm::mat4 animationMatrix(float time) {
 		index += 1;
 	}
 
-	//t coefitient between 0 and 1 for interpolation
 	float t = time / distances[index];
-
 	int size = keyPoints.size()-1;
-	//replace with catmul rom	
-	//glm::vec3 pos = (keyPoints[std::max(0, index)] * t + keyPoints[std::min(size, index + 1)] * (1 - t));
+
 	glm::vec3 pos = glm::catmullRom(keyPoints[std::max(0, index-1)], keyPoints[std::max(0, index)], keyPoints[std::min(size, index + 1)], keyPoints[std::min(size, index + 2)], t);
-	
-	//implement corect animation
-	//auto animationRotation = glm::quat(1,0,0,0);
 
 	for (int i = 0; i < 3; i++) {
 		keyRotation[size - i] = glm::quat(1, 0, 0, 0);
@@ -298,8 +270,6 @@ glm::mat4 animationMatrix(float time) {
 void drawObject(GLuint program, Core::RenderContext context, glm::mat4 modelMatrix)
 {
 	glm::mat4 transformation = perspectiveMatrix * cameraMatrix * modelMatrix;
-
-
 	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program, "transformation"), 1, GL_FALSE, (float*)&transformation);
 	context.render();
@@ -312,7 +282,6 @@ void renderRecursive(vector<Core::Node>& nodes) {
 		}
 
 		glm::mat4 transformation = glm::mat4(node.matrix);
-		// dodaj odwolania do nadrzednych zmiennych
 		int curParent = node.parent;
 		while (curParent >= 0) {
 			transformation = nodes[curParent].matrix * transformation;
@@ -343,18 +312,12 @@ glm::mat4 followCarCamera(float time) {
 	glm::decompose(transformation, scale, rrotation, translation, skew, perspective);
 
 	return glm::translate(-pos) * glm::mat4_cast(rotation_y * rotation_x) * glm::inverse(transformation);
-
 }
 
 void renderScene()
-{
-	// Aktualizacja macierzy widoku i rzutowania. Macierze sa przechowywane w zmiennych globalnych, bo uzywa ich funkcja drawObject.
-	// (Bardziej elegancko byloby przekazac je jako argumenty do funkcji, ale robimy tak dla uproszczenia kodu.
-	//  Jest to mozliwe dzieki temu, ze macierze widoku i rzutowania sa takie same dla wszystkich obiektow!)
-	
+{	
 	cameraMatrix = createCameraMatrix();
 	perspectiveMatrix = Core::createPerspectiveMatrix(0.1, 2000);
-
 	float time = glutGet(GLUT_ELAPSED_TIME) / 1000.f;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -394,7 +357,6 @@ void renderScene()
 Core::Material* loadDiffuseMaterial(aiMaterial* material) {
 	aiString colorPath;
 	// use for loading textures
-
 	material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), colorPath);
 	if (colorPath == aiString("")) {
 		return nullptr;
@@ -410,12 +372,9 @@ Core::Material* loadDiffuseMaterial(aiMaterial* material) {
 Core::Material* loadDiffuseSpecularMaterial(aiMaterial* material) {
 	aiString colorPath;
 	// use for loading textures
-
 	material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), colorPath);
 	Core::DiffuseSpecularMaterial* result = new Core::DiffuseSpecularMaterial();
 	result->texture = Core::LoadTexture(colorPath.C_Str());
-
-
 	aiString specularPath;
 	material->Get(AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), specularPath);
 	result->textureSpecular = Core::LoadTexture(specularPath.C_Str());
@@ -440,57 +399,37 @@ void loadRecusive(const aiScene* scene, aiNode* node, vector<Core::Node>& nodes,
 		loadRecusive(scene, node->mChildren[i], nodes, materialsVector, index);
 	}
 }
-void loadRecusive(const aiScene* scene, vector<Core::Node>& nodes, vector<Core::Material*> materialsVector) {
 
+void loadRecusive(const aiScene* scene, vector<Core::Node>& nodes, vector<Core::Material*> materialsVector) {
 	loadRecusive(scene, scene->mRootNode, nodes, materialsVector, -1);
 }
 
 void initModels() {
 	Assimp::Importer importer;
-	//replace to get more buildings, unrecomdnded
+	vector<Core::Material*> materialsVector;
+
 	const aiScene* scene = importer.ReadFile("models/blade-runner-style-cityscapes.fbx", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 	{
 		cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
 		return;
 	}
-
-	vector<Core::Material*> materialsVector;
-
 	for (int i = 0; i < scene->mNumMaterials; i++) {
 		materialsVector.push_back(loadDiffuseSpecularMaterial(scene->mMaterials[i]));
 	}
 	loadRecusive(scene, city, materialsVector);
 
-
 	scene = importer.ReadFile("models/flying_car.fbx", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-
-
-	// check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 	{
 		cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
 		return;
 	}
 	materialsVector.clear();
-
 	for (int i = 0; i < scene->mNumMaterials; i++) {
 		materialsVector.push_back(loadDiffuseMaterial(scene->mMaterials[i]));
 	}
 	loadRecusive(scene, car, materialsVector);
-
-
-	//Recovering points from fbx
-	//const aiScene* points = importer.ReadFile("models/path.fbx", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-
-	//auto root = points->mRootNode;
-
-	//for (int i = 0; i < root->mNumChildren; i++) {
-	//	auto node = root->mChildren[i];
-	//	cout << "glm::vec3(" << node->mTransformation.a4 << "f, " << node->mTransformation.b4 << "f, " << node->mTransformation.c4 << "f), " << endl;
-	//	//cout << node->mName.C_Str() << endl;
-	//}
 }
 
 void initKeyRoation() {
@@ -499,9 +438,7 @@ void initKeyRoation() {
 	for (int i = 0; i < keyPoints.size()-1; i++) {
 		glm::vec3 newDirection =  keyPoints[i + 1] - keyPoints[i];
 		rotationCamera = glm::normalize(glm::rotationCamera(oldDirection, newDirection) * oldRotationCamera);
-
 		keyRotation.push_back(rotationCamera);
-		
 		oldDirection = newDirection;
 		oldRotationCamera = rotationCamera;
 	}
@@ -555,7 +492,7 @@ int main(int argc, char** argv)
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);
 	glutInitWindowPosition(400, 100);
 	glutInitWindowSize(800, 800);
-	glutCreateWindow("OpenGL Pierwszy Program");
+	glutCreateWindow("Underwater world");
 	glewInit();
 
 	init();
@@ -563,9 +500,7 @@ int main(int argc, char** argv)
 	glutKeyboardFunc(keyboard);
 	glutDisplayFunc(renderScene);
 	glutIdleFunc(idle);
-
 	glutMainLoop();
-
 	shutdown();
 
 	return 0;
