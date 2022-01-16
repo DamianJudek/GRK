@@ -62,7 +62,7 @@ GLuint programSun;
 
 GLuint skyboxShader;
 GLuint skyboxVAO, skyboxVBO;
-float skyboxSize = 200.0f;
+float skyboxSize = 300.0f;
 
 float skyboxVertices[] = {
 	-skyboxSize,  skyboxSize, -skyboxSize,
@@ -553,7 +553,7 @@ int main(int argc, char** argv)
 	glutInit(&argc, argv);
 	glutSetOption(GLUT_MULTISAMPLE, 4);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);
-	glutInitWindowPosition(200, 300);
+	glutInitWindowPosition(400, 100);
 	glutInitWindowSize(800, 800);
 	glutCreateWindow("OpenGL Pierwszy Program");
 	glewInit();
