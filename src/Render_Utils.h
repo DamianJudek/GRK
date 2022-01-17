@@ -112,6 +112,6 @@ namespace Core
 
 	void updateRayPos(RayContext& rayContext, std::vector<glm::vec3> keyPoints);
 
-	//void DrawContext(Core::RayContext& rayContext);
+	void DrawContext(RenderContext& context);
 
 }

@@ -48,7 +48,9 @@ bool FOLLOW_CAR = false;
 
 GLuint program;
 GLuint programTextureSpecular;
+GLuint programColor;
 GLuint programTexture;
+GLuint programTexture2;
 GLuint programSun;
 
 GLuint skyboxShader;
@@ -145,11 +147,15 @@ Core::Shader_Loader shaderLoader;
 
 Core::RenderContext armContext;
 
+Core::RenderContext submarine;
+GLuint submarineTextureId;
+
 vector<Core::RenderContext> armContexts;
 
 vector<Core::Node> city;
 
 vector<Core::Node> car;
+
 
 float cameraAngle = 0;
 glm::vec3 cameraSide;
@@ -217,6 +223,7 @@ glm::mat4 createCameraMatrix()
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	cameraSide = inverse_rot * glm::vec3(1, 0, 0);
 	glm::mat4 cameraTranslation;
+	//cameraTranslation[0][1] = 1.0f;
 	cameraTranslation[3] = glm::vec4(-cameraPos, 1.0f);
 
 	return glm::mat4_cast(rotationCamera) * cameraTranslation;
@@ -314,6 +321,44 @@ glm::mat4 followCarCamera(float time) {
 	return glm::translate(-pos) * glm::mat4_cast(rotation_y * rotation_x) * glm::inverse(transformation);
 }
 
+
+void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
+{
+	GLuint program = programColor;
+
+	glUseProgram(program);
+
+	glUniform3f(glGetUniformLocation(program, "objectColor"), color.x, color.y, color.z);
+	glUniform3f(glGetUniformLocation(program, "lightDir"), lightDir.x, lightDir.y, lightDir.z);
+
+	glm::mat4 transformation = perspectiveMatrix * cameraMatrix * modelMatrix;
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelViewProjectionMatrix"), 1, GL_FALSE, (float*)&transformation);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
+
+	Core::DrawContext(context);
+
+	glUseProgram(0);
+}
+
+void drawObjectTexture(Core::RenderContext context, glm::mat4 modelMatrix, GLuint textureId)
+{
+	GLuint program = programTexture;
+
+	glUseProgram(program);
+
+	glUniform3f(glGetUniformLocation(program, "lightDir"), lightDir.x, lightDir.y, lightDir.z);
+	Core::SetActiveTexture(textureId, "textureSampler", program, 0);
+
+	glm::mat4 transformation = perspectiveMatrix * cameraMatrix * modelMatrix;
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelViewProjectionMatrix"), 1, GL_FALSE, (float*)&transformation);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
+
+	Core::DrawContext(context);
+
+	glUseProgram(0);
+}
+
+
 void renderScene()
 {	
 	cameraMatrix = createCameraMatrix();
@@ -350,6 +395,12 @@ void renderScene()
 		}
 	}
 	
+	glm::mat4 submarineTransformation = glm::translate(glm::vec3(0, -1.0f, -1.9f)) * glm::rotate(glm::radians(0.0f), glm::vec3(0, 1, 0)) * glm::scale(glm::vec3(0.25f));
+	glm::mat4 submarineModelMatrix = glm::translate(cameraPos + cameraDir * 0.5f) * glm::mat4_cast(glm::inverse(rotationCamera)) * submarineTransformation;
+	drawObjectColor(submarine, submarineModelMatrix, glm::vec3(0.6f, 0.6f, 0));
+	drawObjectTexture(submarine, glm::translate(glm::vec3(0, 0, 0)), submarineTextureId);
+
+
 	glUseProgram(0);
 	glutSwapBuffers();
 }
@@ -363,7 +414,7 @@ Core::Material* loadDiffuseMaterial(aiMaterial* material) {
 	}
 	Core::DiffuseMaterial* result = new Core::DiffuseMaterial();
 	result->texture = Core::LoadTexture(colorPath.C_Str());
-	result->program = programTexture;
+	result->program = programTexture2;
 	result->lightDir = lightDir;
 
 	return result;
@@ -404,6 +455,19 @@ void loadRecusive(const aiScene* scene, vector<Core::Node>& nodes, vector<Core::
 	loadRecusive(scene, scene->mRootNode, nodes, materialsVector, -1);
 }
 
+void loadModelToContext(std::string path, Core::RenderContext& context)
+{
+	Assimp::Importer import;
+	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+	{
+		std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
+		return;
+	}
+	context.initFromAssimpMesh(scene->mMeshes[0]);
+}
+
 void initModels() {
 	Assimp::Importer importer;
 	vector<Core::Material*> materialsVector;
@@ -430,6 +494,9 @@ void initModels() {
 		materialsVector.push_back(loadDiffuseMaterial(scene->mMaterials[i]));
 	}
 	loadRecusive(scene, car, materialsVector);
+
+	loadModelToContext("models/YellowSubmarine.obj", submarine);
+	submarineTextureId = Core::LoadTexture("textures/skybox/back.jpg");
 }
 
 void initKeyRoation() {
@@ -460,7 +527,9 @@ void init()
 	glEnable(GL_DEPTH_TEST);
 	program = shaderLoader.CreateProgram("shaders/shader_4_1.vert", "shaders/shader_4_1.frag");
 	programTextureSpecular = shaderLoader.CreateProgram("shaders/shader_spec_tex.vert", "shaders/shader_spec_tex.frag");
-	programTexture = shaderLoader.CreateProgram("shaders/shader_tex_2.vert", "shaders/shader_tex_2.frag");
+	programTexture2 = shaderLoader.CreateProgram("shaders/shader_tex_2.vert", "shaders/shader_tex_2.frag");
+	programColor = shaderLoader.CreateProgram("shaders/shader_color.vert", "shaders/shader_color.frag");
+	programTexture = shaderLoader.CreateProgram("shaders/shader_tex.vert", "shaders/shader_tex.frag");
 	programSun = shaderLoader.CreateProgram("shaders/shader_4_sun.vert", "shaders/shader_4_sun.frag");
 	skyboxShader = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
 	// cube VAO
@@ -475,7 +544,9 @@ void shutdown()
 {
 	shaderLoader.DeleteProgram(program);
 	shaderLoader.DeleteProgram(programTextureSpecular);
+	shaderLoader.DeleteProgram(programColor);
 	shaderLoader.DeleteProgram(programTexture);
+	shaderLoader.DeleteProgram(programTexture2);
 	shaderLoader.DeleteProgram(programSun);
 	shaderLoader.DeleteProgram(skyboxShader);
 }
