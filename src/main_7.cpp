@@ -397,8 +397,7 @@ void renderScene()
 	
 	glm::mat4 submarineTransformation = glm::translate(glm::vec3(0, -1.0f, -1.9f)) * glm::rotate(glm::radians(0.0f), glm::vec3(0, 1, 0)) * glm::scale(glm::vec3(0.25f));
 	glm::mat4 submarineModelMatrix = glm::translate(cameraPos + cameraDir * 0.5f) * glm::mat4_cast(glm::inverse(rotationCamera)) * submarineTransformation;
-	drawObjectColor(submarine, submarineModelMatrix, glm::vec3(0.6f, 0.6f, 0));
-	drawObjectTexture(submarine, glm::translate(glm::vec3(0, 0, 0)), submarineTextureId);
+	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 
 
 	glUseProgram(0);
@@ -496,7 +495,7 @@ void initModels() {
 	loadRecusive(scene, car, materialsVector);
 
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
-	submarineTextureId = Core::LoadTexture("textures/skybox/back.jpg");
+	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
 }
 
 void initKeyRoation() {
