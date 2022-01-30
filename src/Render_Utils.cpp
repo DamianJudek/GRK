@@ -238,3 +238,16 @@ void Core::updateRayPos(RayContext& rayContext,std::vector<glm::vec3> ray) {
     glBufferSubData(GL_ARRAY_BUFFER, 0, keyPoints.size()*3 * sizeof(float), &keyPoints[0]);
     glBindVertexArray(0);
 }
+
+void Core::DrawContext(Core::RenderContext& context)
+{
+
+	glBindVertexArray(context.vertexArray);
+	glDrawElements(
+		GL_TRIANGLES,      // mode
+		context.size,    // count
+		GL_UNSIGNED_INT,   // type
+		(void*)0           // element array buffer offset
+	);
+	glBindVertexArray(0);
+}
