@@ -19,6 +19,8 @@
 #include "Texture.h"
 #include "appConfig.h"
 
+#include "Physics.h"
+
 using namespace std;
 
 GLuint programColor;
@@ -32,6 +34,14 @@ Core::Shader_Loader shaderLoader;
 
 Core::RenderContext submarine;
 GLuint submarineTextureId;
+
+Core::RenderContext flowerOne;
+GLuint flowerOneTexture;
+Core::RenderContext flowerTwo;
+GLuint flowerTwoTexture;
+
+glm::vec3 buffer[10];
+
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
 {
@@ -78,6 +88,7 @@ void renderScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0f, 0.03f, 0.1f, 1.0f);
 
+	
 	// SKYBOX
 	glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
 	glUseProgram(skyboxShader);
@@ -90,6 +101,7 @@ void renderScene()
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS); // set depth function back to default
+	
 		
 	//SUBMARINE
 	glm::mat4 submarineTransformation = glm::translate(glm::vec3(0, -1.0f, -1.9f)) * glm::rotate(glm::radians(0.0f), glm::vec3(0, 1, 0)) * glm::scale(glm::vec3(0.25f));
@@ -97,6 +109,18 @@ void renderScene()
 	drawObjectTexture(submarine, submarineTransformation, submarineTextureId);
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 
+	for (int j = 0; j < 45; j++) {
+		if (j % 15 == 0) {
+			drawObjectTexture(flowerOne, glm::translate(buffer[j]), flowerOneTexture);
+			//drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
+		} else {
+			if (j % 2 == 0) {
+				drawObjectTexture(flowerTwo, glm::translate(buffer[j]), flowerTwoTexture);
+				//drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
+			}
+		}
+		//drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
+	}
 
 	glUseProgram(0);
 	glutSwapBuffers();
@@ -118,6 +142,12 @@ void loadModelToContext(std::string path, Core::RenderContext& context)
 void initModels() {
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
 	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
+
+	loadModelToContext("models/matteucia_struthiopteris_1.obj", flowerOne);
+	flowerOneTexture = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
+	loadModelToContext("models/senecio_1.obj", flowerTwo);
+	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
+
 }
 
 void createSkybox() {
@@ -132,15 +162,23 @@ void createSkybox() {
 
 void init()
 {
+	srand(time(0));
 	glEnable(GL_DEPTH_TEST);
 	programColor = shaderLoader.CreateProgram("shaders/shader_color.vert", "shaders/shader_color.frag");
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex.vert", "shaders/shader_tex.frag");
 	skyboxShader = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
+
 	// cube VAO
 	cubemapTexture = loadCubemap(faces);
 	// skybox VAO
 	createSkybox();
 	initModels();
+
+	for (int i = 0; i < 45; i++) {
+		buffer[i] = glm::ballRand(100.0);
+		buffer[i].y = 0;
+	}
+
 }
 
 void shutdown()
@@ -164,6 +202,7 @@ int main(int argc, char** argv)
 	glutInitWindowSize(800, 800);
 	glutCreateWindow("Underwater world");
 	glewInit();
+
 	init();
 	glutPassiveMotionFunc(mouse);
 	glutKeyboardFunc(keyboard);
