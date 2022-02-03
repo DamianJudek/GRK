@@ -9,10 +9,12 @@ uniform mat4 modelMatrix;
 
 out vec3 interpNormal;
 out vec2 interpTexCoord;
+out vec4 pop;
 
 void main()
 {
 	gl_Position = modelViewProjectionMatrix * vec4(vertexPosition, 1.0);
 	interpNormal = (modelMatrix * vec4(vertexNormal, 0.0)).xyz;
 	interpTexCoord = vertexTexCoord;
+	pop = gl_Position;
 }

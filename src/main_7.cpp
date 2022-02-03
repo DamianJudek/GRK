@@ -40,7 +40,9 @@ GLuint flowerOneTexture;
 Core::RenderContext flowerTwo;
 GLuint flowerTwoTexture;
 
-glm::vec3 buffer[10];
+glm::vec3 buffer[45];
+
+glm::vec1 z[45];
 
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
@@ -175,8 +177,9 @@ void init()
 	initModels();
 
 	for (int i = 0; i < 45; i++) {
+		z[i].x = i;
 		buffer[i] = glm::ballRand(100.0);
-		buffer[i].y = 0;
+		buffer[i].y = z[i].x;
 	}
 
 }
