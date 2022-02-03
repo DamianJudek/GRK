@@ -10,9 +10,9 @@ in vec4 pop;
 void main()
 {
 	// Fog parameters, could make them uniforms and pass them into the fragment shader
-	float fog_maxdist = 60.0;
+	float fog_maxdist = 50.0;
 	float fog_mindist = 0.5;
-	vec4  fog_colour = vec4(0.03125, 0.1328125, 0.5390625, 0.9);
+	vec4  fog_colour = vec4(0.015625, 0.06640625, 0.2734375, 0.9);
 	
 	// Calculate fog
 	float dist = length(pop.xyz);
