@@ -15,6 +15,7 @@ extern glm::mat4 cameraMatrix, perspectiveMatrix;
 extern float old_x, old_y;
 extern float delta_x, delta_y;
 extern glm::quat rotationCamera;
+extern glm::vec3 cameraVertical;
 extern glm::quat rotation_y;
 extern glm::quat rotation_x;
 extern float dy;

@@ -108,7 +108,7 @@ float dy = 0;
 float dx = 0;
 
 glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
-
+glm::vec3 cameraVertical;
 glm::mat4 createCameraMatrix()
 {
     auto rot_y = glm::angleAxis(delta_y * 0.03f, glm::vec3(1, 0, 0));
@@ -127,6 +127,7 @@ glm::mat4 createCameraMatrix()
     cameraDir = inverse_rot * glm::vec3(0, 0, -1);
     glm::vec3 up = glm::vec3(0, 1, 0);
     cameraSide = inverse_rot * glm::vec3(1, 0, 0);
+    cameraVertical = inverse_rot * glm::vec3(0, 1, 0);
     glm::mat4 cameraTranslation;
     cameraTranslation[3] = glm::vec4(-cameraPos, 1.0f);
 
