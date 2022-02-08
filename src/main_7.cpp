@@ -4,7 +4,6 @@
 #include <cmath>
 #include <ctime>
 #include "glm.hpp"
-
 #include "glew.h"
 #include "freeglut.h"
 #include "gtx/matrix_decompose.hpp"
@@ -18,11 +17,13 @@
 #include "stb_image.h"
 #include "Texture.h"
 #include "appConfig.h"
+#include "Particles.h"
 
 #include "Physics.h"
 
 using namespace std;
 
+GLuint programParticles;
 GLuint programColor;
 GLuint programTexture;
 GLuint skyboxShader;
@@ -132,8 +133,16 @@ void renderScene()
 		// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
 	}
 
+	// terrain lol?
 	drawObjectTexture(ground, submarineTransformation, groundTexture);
 	drawObjectColor(ground, submarineTransformation, glm::vec3(0.4, 0.5, 0.7));
+
+	// particles
+	simulateParticles(cameraPos);
+	updateParticles();
+	bindParticles(cameraSide, cameraVertical, perspectiveMatrix, cameraMatrix, programParticles);
+	renderParticles();
+
 	// FISH OVER INTERPOLATED PATHS
 	for (int i = 0; i < fishe.size(); i++)
 	{
@@ -195,12 +204,15 @@ void init()
 	glEnable(GL_DEPTH_TEST);
 	programColor = shaderLoader.CreateProgram("shaders/shader_color.vert", "shaders/shader_color.frag");
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex.vert", "shaders/shader_tex.frag");
+	programParticles = shaderLoader.CreateProgram("shaders/particles.vert", "shaders/particles.frag");
 	skyboxShader = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
 
 	// cube VAO
 	cubemapTexture = loadCubemap(faces);
 	// skybox VAO
 	createSkybox();
+	initParticles();
+
 	initModels();
 
 	for (int i = 0; i < 45; i++)
@@ -226,6 +238,9 @@ void shutdown()
 	shaderLoader.DeleteProgram(programColor);
 	shaderLoader.DeleteProgram(programTexture);
 	shaderLoader.DeleteProgram(skyboxShader);
+	shaderLoader.DeleteProgram(programParticles);
+
+	deleteParticles();
 }
 
 void idle()
