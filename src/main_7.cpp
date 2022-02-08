@@ -4,7 +4,6 @@
 #include <cmath>
 #include <ctime>
 #include "glm.hpp"
-
 #include "glew.h"
 #include "freeglut.h"
 #include "gtx/matrix_decompose.hpp"
@@ -18,9 +17,11 @@
 #include "stb_image.h"
 #include "Texture.h"
 #include "appConfig.h"
+#include "Particles.h"
 
 using namespace std;
 
+GLuint programParticles;
 GLuint programColor;
 GLuint programTexture;
 GLuint skyboxShader;
@@ -103,11 +104,16 @@ void renderScene()
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 	drawObjectTexture(fish_models[0], glm::scale(glm::rotate(submarineTransformation, 4.71239f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(10.f, 10.f, 10.f)), fishTextureId);
 
+	// particles
+	simulateParticles(cameraPos);
+	updateParticles();
+	bindParticles(cameraSide, cameraVertical, perspectiveMatrix, cameraMatrix, programParticles);
+	renderParticles();
+
 	// FISH OVER INTERPOLATED PATHS
 	for (int i = 0; i < fishe.size(); i++) {
 		drawObjectTexture(fish_models[fishe[i]->model_id], glm::scale(glm::rotate(animationMatrix(current_time+fishe[i]->t_offset, fishe[i]), 4.71238f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(1.f, 1.f, 1.f)), fishTextureId);
 	}
-	
 
 	glUseProgram(0);
 	glutSwapBuffers();
@@ -155,11 +161,14 @@ void init()
 	glEnable(GL_DEPTH_TEST);
 	programColor = shaderLoader.CreateProgram("shaders/shader_color.vert", "shaders/shader_color.frag");
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex.vert", "shaders/shader_tex.frag");
+	programParticles = shaderLoader.CreateProgram("shaders/particles.vert", "shaders/particles.frag");
 	skyboxShader = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
 	// cube VAO
 	cubemapTexture = loadCubemap(faces);
 	// skybox VAO
 	createSkybox();
+	initParticles();
+
 	initModels();
 	initPaths(15, 
 		/* path_radius */ glm::vec2(30.0f, 80.0f),
@@ -178,6 +187,9 @@ void shutdown()
 	shaderLoader.DeleteProgram(programColor);
 	shaderLoader.DeleteProgram(programTexture);
 	shaderLoader.DeleteProgram(skyboxShader);
+	shaderLoader.DeleteProgram(programParticles);
+
+	deleteParticles();
 }
 
 void idle()
