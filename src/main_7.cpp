@@ -4,7 +4,6 @@
 #include <cmath>
 #include <ctime>
 #include "glm.hpp"
-
 #include "glew.h"
 #include "freeglut.h"
 #include "gtx/matrix_decompose.hpp"

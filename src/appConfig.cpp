@@ -109,6 +109,15 @@ float dx = 0;
 
 glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
 glm::vec3 cameraVertical;
+
+const glm::vec3 geysersLocations[5]=[
+{6.0f, -4.0f, 4.0f},
+{ 6.0f, -4.0f, 4.0f },
+{ 6.0f, -4.0f, 4.0f },
+{ 6.0f, -4.0f, 4.0f },
+{ 6.0f, -4.0f, 4.0f }
+]
+
 glm::mat4 createCameraMatrix()
 {
     auto rot_y = glm::angleAxis(delta_y * 0.03f, glm::vec3(1, 0, 0));

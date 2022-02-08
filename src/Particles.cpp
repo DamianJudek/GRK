@@ -8,14 +8,13 @@
 #include <cmath>
 #include <algorithm>
 
-#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
-#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
-#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+#define FOURCC_DXT1 0x31545844
+#define FOURCC_DXT3 0x33545844
+#define FOURCC_DXT5 0x35545844
 
 GLuint billboard_vertex_buffer;
 GLuint particles_position_buffer;
 GLuint particles_color_buffer;
-
 GLuint particleTexture;
 
 static GLfloat* g_particule_position_size_data;
@@ -24,7 +23,6 @@ static GLubyte* g_particule_color_data;
 int ParticlesCount = 0;
 double lastTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 
-// CPU representation of a particle
 struct Particle {
 	glm::vec3 pos, speed;
 	unsigned char r, g, b, a; // Color
@@ -42,8 +40,6 @@ const int MaxParticles = 60;
 Particle ParticlesContainer[MaxParticles];
 int LastUsedParticle = 0;
 
-// Finds a Particle in ParticlesContainer which isn't used yet.
-// (i.e. life < 0);
 int FindUnusedParticle() {
 
 	for (int i = LastUsedParticle; i < MaxParticles; i++) {
@@ -203,9 +199,9 @@ void simulateParticles(glm::vec3 cameraPos) {
 	// Generate 10 new particule each millisecond,
 	// but limit this to 16 ms (60 fps), or if you have 1 long frame (1sec),
 	// newparticles will be huge and the next frame even longer.
-	int newparticles = (int)(delta * 10000.0);
-	if (newparticles > (int)(0.016f * 10000.0))
-		newparticles = (int)(0.016f * 10000.0);
+	int newparticles = (int)(delta * 200.0);
+	if (newparticles > (int)(0.016f * 200.0))
+		newparticles = (int)(0.016f * 200.0);
 
 	for (int i = 0; i < newparticles; i++) {
 		int particleIndex = FindUnusedParticle();
@@ -214,26 +210,18 @@ void simulateParticles(glm::vec3 cameraPos) {
 
 		float spread = 1.5f;
 		glm::vec3 maindir = glm::vec3(0.0f, 10.0f, 0.0f);
-		// Very bad way to generate a random direction; 
-		// See for instance http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution instead,
-		// combined with some user-controlled parameters (main direction, spread, etc)
 		glm::vec3 randomdir = glm::vec3(
 			(rand() % 2000 - 1000.0f) / 1000.0f,
 			(rand() % 2000 - 1000.0f) / 1000.0f,
 			(rand() % 2000 - 1000.0f) / 1000.0f
 		);
 
-		ParticlesContainer[particleIndex].speed = maindir + randomdir * spread;
-
-
-		// Very bad way to generate a random color
 		int particleColour = 200;
+		ParticlesContainer[particleIndex].speed = maindir + randomdir * spread;
 		ParticlesContainer[particleIndex].r = particleColour;
 		ParticlesContainer[particleIndex].g = particleColour;
 		ParticlesContainer[particleIndex].b = particleColour;
 		ParticlesContainer[particleIndex].a = particleColour / 3;
-
-		//ParticlesContainer[particleIndex].size = 0.2f;
 		ParticlesContainer[particleIndex].size = 0.2f;
 
 	}
@@ -252,6 +240,7 @@ void simulateParticles(glm::vec3 cameraPos) {
 
 				// Simulate simple physics : gravity only, no collisions
 				//p.speed += glm::vec3(0.0f, -9.81f, 0.0f) * (float)delta;
+				p.speed += glm::vec3(0.0f, -1.5f, 0.0f) * (float)delta;
 				p.pos += p.speed * (float)delta;
 				p.cameradistance = glm::length(p.pos - cameraPos);
 				//ParticlesContainer[i].pos += glm::vec3(0.0f,10.0f, 0.0f) * (float)delta;
@@ -284,17 +273,11 @@ void simulateParticles(glm::vec3 cameraPos) {
 }
 
 void updateParticles() {
-	// Update the buffers that OpenGL uses for rendering.
-	// There are much more sophisticated means to stream data from the CPU to the GPU,
-	// but this is outside the scope of this tutorial.
-	// http://www.opengl.org/wiki/Buffer_Object_Streaming
-
 	glBindBuffer(GL_ARRAY_BUFFER, particles_position_buffer);
-	glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+	glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, ParticlesCount * sizeof(GLfloat) * 4, g_particule_position_size_data);
-
 	glBindBuffer(GL_ARRAY_BUFFER, particles_color_buffer);
-	glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+	glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, ParticlesCount * sizeof(GLubyte) * 4, g_particule_color_data);
 }
 
@@ -366,21 +349,10 @@ void bindParticles(glm::vec3 cameraSide, glm::vec3 cameraVertical, glm::mat4 per
 
 void renderParticles() {
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ParticlesCount);
-	// These functions are specific to glDrawArrays*Instanced*.
-	// The first parameter is the attribute buffer we're talking about.
-	// The second parameter is the "rate at which generic vertex attributes advance when rendering multiple instances"
-	// http://www.opengl.org/sdk/docs/man/xhtml/glVertexAttribDivisor.xml
-	glVertexAttribDivisor(0, 0); // particles vertices : always reuse the same 4 vertices -> 0
-	glVertexAttribDivisor(1, 1); // positions : one per quad (its center) -> 1
-	glVertexAttribDivisor(2, 1); // color : one per quad -> 1
-
-	// Draw the particules !
-	// This draws many times a small triangle_strip (which looks like a quad).
-	// This is equivalent to :
-	// for(i in ParticlesCount) : glDrawArrays(GL_TRIANGLE_STRIP, 0, 4),
-	// but faster.
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribDivisor(1, 1);
+	glVertexAttribDivisor(2, 1);
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ParticlesCount);
-
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
