@@ -37,6 +37,12 @@ Core::RenderContext seahorse;
 Core::RenderContext fish_models[4];
 GLuint fishTextureId;
 
+Core::RenderContext coin;
+GLuint coinTextureId;
+
+glm::vec3 coins[10];
+int numberOfCoins = 0;
+
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
 {
 	GLuint program = programColor;
@@ -107,7 +113,14 @@ void renderScene()
 	for (int i = 0; i < fishe.size(); i++) {
 		drawObjectTexture(fish_models[fishe[i]->model_id], glm::scale(glm::rotate(animationMatrix(current_time+fishe[i]->t_offset, fishe[i]), 4.71238f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(1.f, 1.f, 1.f)), fishTextureId);
 	}
-	
+
+	for (int j = 0; j < 10; j++) {
+		if (((cameraPos.x - coins[j].x) > (-1.0f) && (cameraPos.x - coins[j].x) < (1.0f)) || ((cameraPos.y - coins[j].y) > (-1.0f) && (cameraPos.y - coins[j].y) < (1.0f)) || ((cameraPos.z - coins[j].z) > (-1.0f) && (cameraPos.z - coins[j].z) < (1.0f))) {
+			continue;
+		} else {
+			 drawObjectTexture(coin, glm::translate(coins[j]), coinTextureId);
+		}	
+	}	
 
 	glUseProgram(0);
 	glutSwapBuffers();
@@ -138,6 +151,8 @@ void initModels() {
 	loadModelToContext("models/FishV3.obj", fish_models[2]);
 	loadModelToContext("models/FishV4.obj", fish_models[3]);
 
+	loadModelToContext("models/medal.obj", coin);
+	coinTextureId = Core::LoadTexture("textures/Textures/BTC_Albedo.png");
 }
 
 void createSkybox() {
@@ -171,6 +186,11 @@ void init()
 		/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
 	initPathRots();
 	initFish(300);
+
+	for (int i = 0; i < 10; i++) {
+		coins[i] = glm::ballRand(100.0);
+		coins[i].y = 0;
+	}
 }
 
 void shutdown()
