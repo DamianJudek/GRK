@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cmath>
 #include <ctime>
-//#include <random>
 #include "glm.hpp"
 
 #include "glew.h"
@@ -21,15 +20,6 @@
 #include "appConfig.h"
 
 using namespace std;
-
-
-/*
-// random
-random_device rd;
-mt19937 gen(rd());
-uniform_real_distribution<> dist(0.0f, 1.0f);
-*/
-
 
 GLuint programColor;
 GLuint programTexture;

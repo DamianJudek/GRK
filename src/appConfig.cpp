@@ -1,6 +1,3 @@
-//#ifndef Fishes
-//#define Fishes
-
 #include "appConfig.h"
 #include "glew.h"
 #include "glm.hpp"
@@ -10,12 +7,9 @@
 #include <string>
 #include <vector>
 
-//fishe
 #include <random>
 #include <gtx/quaternion.hpp>
 #include <ext.hpp>
-
-
 
 using namespace std;
 int index = 0;
@@ -171,15 +165,12 @@ void mouse(int x, int y)
     old_y = y;
 }
 
-// random
 random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<> dist(0.0f, 1.0f);
 
-// FISHY STUFF
 std::vector<std::vector<glm::vec3>> paths{};
 std::vector<std::vector<glm::quat>> path_rots{};
-
 
 std::vector<Fish*> fishe;
 
@@ -218,9 +209,7 @@ glm::mat4 animationMatrix(float time, Fish* cur_fish) {
         t
     );
 
-
     // rotation interpolation
-
     glm::quat rq[4];
     for (int i = 0; i < 4; i++) {
         rq[i] = path_rots[cur_fish->p_id][(index - 1 + i) % cur_fish->p_size];
@@ -230,10 +219,8 @@ glm::mat4 animationMatrix(float time, Fish* cur_fish) {
     auto a2 = rq[2] * glm::exp((glm::log(glm::inverse(rq[2]) * rq[1]) + glm::log(glm::inverse(rq[2]) * rq[3])) / (-4.f));
 
     auto animationRotation = glm::squad(rq[1], rq[2], a1, a2, t);
-    //auto animationRotation = glm::quat(1, 0, 0, 0);
 
     glm::mat4 result = glm::translate(pos) * glm::mat4_cast(animationRotation);
-
 
     return result;
 }
@@ -277,8 +264,6 @@ void initPaths(int path_amount,
 
         for (int i = 0; i < 12; i++) paths[paths.size() - 1].push_back(glm::vec3(coordvec[i], coordvec[i + 12], coordvec[i + 24]));
     }
-
-
 }
 
 void initPathRots() {
@@ -299,9 +284,3 @@ void initPathRots() {
 void initFish(int amount) {
     for (int i = 0; i < amount; i++) fishe.push_back(new Fish(rand() % paths.size(), i * dist(gen)));
 }
-// FISHY STUFF END
-
-// end fishe
-
-//#endif
-

@@ -1,4 +1,3 @@
-
 #include <string>
 #include <vector>
 #include "glm.hpp"
@@ -27,7 +26,6 @@ extern void mouse(int x, int y);
 extern std::vector<std::vector<glm::vec3>> paths;
 extern std::vector<std::vector<glm::quat>> path_rots;
 
-
 struct Fish {
     int p_id;
     int p_size;
@@ -41,8 +39,6 @@ struct Fish {
         model_id = (int)(rand() % 4);
     }
 };
-
-
 
 extern std::vector<Fish*> fishe;
 extern glm::mat4 animationMatrix(float time, Fish* cur_fish);
