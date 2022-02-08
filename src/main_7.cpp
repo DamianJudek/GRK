@@ -34,6 +34,10 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext submarine;
 GLuint submarineTextureId;
 
+Core::RenderContext seahorse;
+Core::RenderContext fish_models[4];
+GLuint fishTextureId;
+
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
 {
 	GLuint program = programColor;
@@ -75,6 +79,7 @@ void renderScene()
 {	
 	cameraMatrix = createCameraMatrix();
 	perspectiveMatrix = Core::createPerspectiveMatrix(0.1, 2000);
+	float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.f;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0f, 0.03f, 0.1f, 1.0f);
@@ -97,12 +102,18 @@ void renderScene()
 	glm::mat4 submarineModelMatrix = glm::translate(cameraPos + cameraDir * 0.5f) * glm::mat4_cast(glm::inverse(rotationCamera)) * submarineTransformation;
 	drawObjectTexture(submarine, submarineTransformation, submarineTextureId);
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
+	drawObjectTexture(fish_models[0], glm::scale(glm::rotate(submarineTransformation, 4.71239f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(10.f, 10.f, 10.f)), fishTextureId);
 
 	// particles
 	simulateParticles(cameraPos);
 	updateParticles();
 	bindParticles(cameraSide, cameraVertical, perspectiveMatrix, cameraMatrix, programParticles);
 	renderParticles();
+
+	// FISH OVER INTERPOLATED PATHS
+	for (int i = 0; i < fishe.size(); i++) {
+		drawObjectTexture(fish_models[fishe[i]->model_id], glm::scale(glm::rotate(animationMatrix(current_time+fishe[i]->t_offset, fishe[i]), 4.71238f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(1.f, 1.f, 1.f)), fishTextureId);
+	}
 
 	glUseProgram(0);
 	glutSwapBuffers();
@@ -124,6 +135,15 @@ void loadModelToContext(std::string path, Core::RenderContext& context)
 void initModels() {
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
 	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
+	
+	loadModelToContext("models/seahorse.obj", seahorse);
+
+	fishTextureId = Core::LoadTexture("textures/PolyPackFish.png");
+	loadModelToContext("models/FishV1.obj", fish_models[0]);
+	loadModelToContext("models/FishV2.obj", fish_models[1]);
+	loadModelToContext("models/FishV3.obj", fish_models[2]);
+	loadModelToContext("models/FishV4.obj", fish_models[3]);
+
 }
 
 void createSkybox() {
@@ -150,6 +170,16 @@ void init()
 	initParticles();
 
 	initModels();
+	initPaths(15, 
+		/* path_radius */ glm::vec2(30.0f, 80.0f),
+		/* placement_area_x */ glm::vec2(-150.0f, 150.0f),
+		/* placement_area_y */ glm::vec2(-150.0f, 150.0f),
+		/* placement_area_z */ glm::vec2(0.0f, 100.0f),
+		/* rand_x_offset */ glm::vec2(-30.0f, 30.0f),
+		/* rand_y_offset */ glm::vec2(-30.0f, 30.0f),
+		/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
+	initPathRots();
+	initFish(300);
 }
 
 void shutdown()
