@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <ctime>
-#include <random>
+//#include <random>
 #include "glm.hpp"
 
 #include "glew.h"
@@ -22,10 +22,14 @@
 
 using namespace std;
 
+
+/*
 // random
 random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<> dist(0.0f, 1.0f);
+*/
+
 
 GLuint programColor;
 GLuint programTexture;
@@ -39,10 +43,14 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext submarine;
 GLuint submarineTextureId;
 
+//te fishe zostają
 Core::RenderContext seahorse;
 Core::RenderContext fish_models[4];
 GLuint fishTextureId;
 
+//std::vector<Fish*> fishe;
+
+/*
 // FISHY STUFF
 std::vector<std::vector<glm::vec3>> paths{};
 std::vector<std::vector<glm::quat>> path_rots{};
@@ -179,6 +187,7 @@ void initFish(int amount) {
 	for (int i = 0; i < amount; i++) fishe.push_back(new Fish(rand() % paths.size(), i*dist(gen)));
 }
 // FISHY STUFF END
+*/
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
 {
