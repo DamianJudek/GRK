@@ -7,6 +7,7 @@
 #include "glm.hpp"
 #include <cmath>
 #include <algorithm>
+#include "appConfig.h"
 
 #define FOURCC_DXT1 0x31545844
 #define FOURCC_DXT3 0x33545844
@@ -36,9 +37,10 @@ struct Particle {
 	}
 };
 
-const int MaxParticles = 60;
+const int MaxParticles = 500;
 Particle ParticlesContainer[MaxParticles];
 int LastUsedParticle = 0;
+int locationIndex = 0;
 
 int FindUnusedParticle() {
 
@@ -56,7 +58,7 @@ int FindUnusedParticle() {
 		}
 	}
 
-	return 0; // All particles are taken, override the first one
+	return 0;
 }
 
 void SortParticles() {
@@ -69,14 +71,12 @@ GLuint loadDDS(const char* imagepath)
 
 	FILE* fp;
 
-	/* try to open the file */
 	fp = fopen(imagepath, "rb");
 	if (fp == NULL) {
 		printf("%s could not be opened. Are you in the right directory ? Don't forget to read the FAQ !\n", imagepath); getchar();
 		return 0;
 	}
 
-	/* verify the type of file */
 	char filecode[4];
 	fread(filecode, 1, 4, fp);
 	if (strncmp(filecode, "DDS ", 4) != 0) {
@@ -84,7 +84,6 @@ GLuint loadDDS(const char* imagepath)
 		return 0;
 	}
 
-	/* get the surface desc */
 	fread(&header, 124, 1, fp);
 
 	unsigned int height = *(unsigned int*)&(header[8]);
@@ -96,11 +95,9 @@ GLuint loadDDS(const char* imagepath)
 
 	unsigned char* buffer;
 	unsigned int bufsize;
-	/* how big is it going to be including all mipmaps? */
 	bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
 	buffer = (unsigned char*)malloc(bufsize * sizeof(unsigned char));
 	fread(buffer, 1, bufsize, fp);
-	/* close the file pointer */
 	fclose(fp);
 
 	unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
@@ -165,8 +162,6 @@ void initParticles() {
 		ParticlesContainer[i].cameradistance = -1.0f;
 	}
 
-	// The VBO containing the 4 vertices of the particles.
-	// Thanks to instancing, they will be shared by all particles.
 	static const GLfloat g_vertex_buffer_data[] = {
 	 -0.5f, -0.5f, 0.0f,
 	 0.5f, -0.5f, 0.0f,
@@ -177,17 +172,11 @@ void initParticles() {
 	glGenBuffers(1, &billboard_vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, billboard_vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	// The VBO containing the positions and sizes of the particles
 	glGenBuffers(1, &particles_position_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, particles_position_buffer);
-	// Initialize with empty (NULL) buffer : it will be updated later, each frame.
 	glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
-
-	// The VBO containing the colors of the particles
 	glGenBuffers(1, &particles_color_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, particles_color_buffer);
-	// Initialize with empty (NULL) buffer : it will be updated later, each frame.
 	glBufferData(GL_ARRAY_BUFFER, MaxParticles * 4 * sizeof(GLubyte), NULL, GL_STREAM_DRAW);
 }
 
@@ -196,9 +185,6 @@ void simulateParticles(glm::vec3 cameraPos) {
 	double delta = currentTime - lastTime;
 	lastTime = currentTime;
 
-	// Generate 10 new particule each millisecond,
-	// but limit this to 16 ms (60 fps), or if you have 1 long frame (1sec),
-	// newparticles will be huge and the next frame even longer.
 	int newparticles = (int)(delta * 200.0);
 	if (newparticles > (int)(0.016f * 200.0))
 		newparticles = (int)(0.016f * 200.0);
@@ -206,8 +192,9 @@ void simulateParticles(glm::vec3 cameraPos) {
 	for (int i = 0; i < newparticles; i++) {
 		int particleIndex = FindUnusedParticle();
 		ParticlesContainer[particleIndex].life = 5.0f; // This particle will live 5 seconds.
-		ParticlesContainer[particleIndex].pos = glm::vec3(6.0f, -4.0f, 4.0f);
-
+		ParticlesContainer[particleIndex].pos = geysersLocations[locationIndex];
+		locationIndex = (locationIndex + 1) % 5;
+		cout << locationIndex << endl;
 		float spread = 1.5f;
 		glm::vec3 maindir = glm::vec3(0.0f, 10.0f, 0.0f);
 		glm::vec3 randomdir = glm::vec3(
@@ -226,26 +213,18 @@ void simulateParticles(glm::vec3 cameraPos) {
 
 	}
 
-	// Simulate all particles
 	ParticlesCount = 0;
 	for (int i = 0; i < MaxParticles; i++) {
-
-		Particle& p = ParticlesContainer[i]; // shortcut
+		Particle& p = ParticlesContainer[i];
 
 		if (p.life > 0.0f) {
-
-			// Decrease life
 			p.life -= delta;
 			if (p.life > 0.0f) {
 
-				// Simulate simple physics : gravity only, no collisions
-				//p.speed += glm::vec3(0.0f, -9.81f, 0.0f) * (float)delta;
 				p.speed += glm::vec3(0.0f, -1.5f, 0.0f) * (float)delta;
 				p.pos += p.speed * (float)delta;
 				p.cameradistance = glm::length(p.pos - cameraPos);
-				//ParticlesContainer[i].pos += glm::vec3(0.0f,10.0f, 0.0f) * (float)delta;
 
-				// Fill the GPU buffer
 				g_particule_position_size_data[4 * ParticlesCount + 0] = p.pos.x;
 				g_particule_position_size_data[4 * ParticlesCount + 1] = p.pos.y;
 				g_particule_position_size_data[4 * ParticlesCount + 2] = p.pos.z;
@@ -259,7 +238,6 @@ void simulateParticles(glm::vec3 cameraPos) {
 
 			}
 			else {
-				// Particles that just died will be put at the end of the buffer in SortParticles();
 				p.cameradistance = -1.0f;
 			}
 
@@ -309,8 +287,6 @@ void bindParticles(glm::vec3 cameraSide, glm::vec3 cameraVertical, glm::mat4 per
 	glm::mat4 transformation = perspectiveMatrix * cameraMatrix;
 	glUniformMatrix4fv(ViewProjMatrixID, 1, GL_FALSE, (float*)&transformation);
 
-
-	// 1rst attribute buffer : vertices
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, billboard_vertex_buffer);
 	glVertexAttribPointer(

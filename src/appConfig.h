@@ -3,8 +3,10 @@
 #include <vector>
 #include "glm.hpp"
 
+using namespace std; 
+
 extern float skyboxVertices[108];
-extern std::vector<std::string> faces;
+extern vector<std::string> faces;
 extern unsigned int loadCubemap(std::vector<std::string> faces);
 
 extern float cameraAngle;
@@ -16,6 +18,7 @@ extern float old_x, old_y;
 extern float delta_x, delta_y;
 extern glm::quat rotationCamera;
 extern glm::vec3 cameraVertical;
+extern vector <glm::vec3> geysersLocations;
 extern glm::quat rotation_y;
 extern glm::quat rotation_x;
 extern float dy;
