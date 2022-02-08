@@ -65,7 +65,7 @@ std::vector<std::string> faces = {
     "./textures/skybox/top.jpg",
     "./textures/skybox/bottom.jpg",
     "./textures/skybox/front.jpg",
-    "./textures/skybox/back.jpg"};
+    "./textures/skybox/back.jpg" };
 
 unsigned int loadCubemap(std::vector<std::string> faces)
 {

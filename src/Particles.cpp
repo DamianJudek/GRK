@@ -194,7 +194,7 @@ void simulateParticles(glm::vec3 cameraPos) {
 		ParticlesContainer[particleIndex].life = 5.0f; // This particle will live 5 seconds.
 		ParticlesContainer[particleIndex].pos = geysersLocations[locationIndex];
 		locationIndex = (locationIndex + 1) % 5;
-		cout << locationIndex << endl;
+
 		float spread = 1.5f;
 		glm::vec3 maindir = glm::vec3(0.0f, 10.0f, 0.0f);
 		glm::vec3 randomdir = glm::vec3(
