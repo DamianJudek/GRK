@@ -24,18 +24,8 @@ extern glm::mat4 createCameraMatrix();
 extern void keyboard(unsigned char key, int x, int y);
 extern void mouse(int x, int y);
 
-/*
-struct Fish {
-    int p_id;
-    int p_size;
-    float t_offset;
-    int model_id;
-    Fish(int path, float offset);
-};
-*/
-
-extern std::vector<std::vector<glm::vec3>> paths{};
-extern std::vector<std::vector<glm::quat>> path_rots{};
+extern std::vector<std::vector<glm::vec3>> paths;
+extern std::vector<std::vector<glm::quat>> path_rots;
 
 
 struct Fish {
@@ -55,8 +45,6 @@ struct Fish {
 
 
 extern std::vector<Fish*> fishe;
-
-//extern Fish(int path, float offset);
 extern glm::mat4 animationMatrix(float time, Fish* cur_fish);
 extern void initPaths(int path_amount,
     glm::vec2 path_radius,

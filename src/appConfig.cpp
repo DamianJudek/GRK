@@ -171,8 +171,6 @@ void mouse(int x, int y)
     old_y = y;
 }
 
-
-//fishe
 // random
 random_device rd;
 mt19937 gen(rd());
