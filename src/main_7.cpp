@@ -35,6 +35,9 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext submarine;
 GLuint submarineTextureId;
 
+Core::RenderContext ground;
+GLuint groundTexture;
+
 Core::RenderContext flowerOne;
 GLuint flowerOneTexture;
 Core::RenderContext flowerTwo;
@@ -43,6 +46,8 @@ GLuint flowerTwoTexture;
 glm::vec3 buffer[45];
 
 glm::vec1 z[45];
+
+
 
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
@@ -124,6 +129,9 @@ void renderScene()
 		//drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
 	}
 
+	drawObjectTexture(ground, submarineTransformation, groundTexture);
+	drawObjectColor(ground, submarineTransformation, glm::vec3(0.4, 0.5, 0.7));
+
 	glUseProgram(0);
 	glutSwapBuffers();
 }
@@ -144,11 +152,15 @@ void loadModelToContext(std::string path, Core::RenderContext& context)
 void initModels() {
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
 	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
+	
 
 	loadModelToContext("models/matteucia_struthiopteris_1.obj", flowerOne);
 	flowerOneTexture = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
 	loadModelToContext("models/senecio_1.obj", flowerTwo);
 	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
+
+	loadModelToContext("models/terrain.obj", ground);
+	groundTexture = Core::LoadTexture("textures/lava.jpg");
 
 }
 
@@ -207,6 +219,9 @@ int main(int argc, char** argv)
 	glewInit();
 
 	init();
+
+
+
 	glutPassiveMotionFunc(mouse);
 	glutKeyboardFunc(keyboard);
 	glutDisplayFunc(renderScene);
