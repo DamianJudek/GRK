@@ -117,20 +117,8 @@ void renderScene()
 
 	for (int j = 0; j < 45; j++)
 	{
-		if (j % 15 == 0)
-		{
-			drawObjectTexture(flowerOne, glm::translate(buffer[j]), flowerOneTexture);
-			// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
-		}
-		else
-		{
-			if (j % 2 == 0)
-			{
-				drawObjectTexture(flowerTwo, glm::translate(buffer[j]), flowerTwoTexture);
-				// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
-			}
-		}
-		// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
+		if (j % 9 == 0) drawObjectTexture(flowerOne, glm::translate(buffer[j]), flowerOneTexture);
+		else drawObjectTexture(flowerTwo, glm::translate(buffer[j]), flowerTwoTexture);
 	}
 
 	// terrain lol?
@@ -222,13 +210,13 @@ void init()
 	}
 
 	initPaths(15,
-						/* path_radius */ glm::vec2(30.0f, 80.0f),
-						/* placement_area_x */ glm::vec2(-150.0f, 150.0f),
-						/* placement_area_y */ glm::vec2(-150.0f, 150.0f),
-						/* placement_area_z */ glm::vec2(0.0f, 100.0f),
-						/* rand_x_offset */ glm::vec2(-30.0f, 30.0f),
-						/* rand_y_offset */ glm::vec2(-30.0f, 30.0f),
-						/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
+		/* path_radius */ glm::vec2(30.0f, 80.0f),
+		/* placement_area_x */ glm::vec2(-150.0f, 150.0f),
+		/* placement_area_y */ glm::vec2(-150.0f, 150.0f),
+		/* placement_area_z */ glm::vec2(0.0f, 100.0f),
+		/* rand_x_offset */ glm::vec2(-30.0f, 30.0f),
+		/* rand_y_offset */ glm::vec2(-30.0f, 30.0f),
+		/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
 	initPathRots();
 	initFish(300);
 }

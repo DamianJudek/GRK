@@ -37,7 +37,7 @@ struct Particle {
 	}
 };
 
-const int MaxParticles = 500;
+const int MaxParticles = 1000;
 Particle ParticlesContainer[MaxParticles];
 int LastUsedParticle = 0;
 int locationIndex = 0;
@@ -228,9 +228,7 @@ void simulateParticles(glm::vec3 cameraPos) {
 				g_particule_position_size_data[4 * ParticlesCount + 0] = p.pos.x;
 				g_particule_position_size_data[4 * ParticlesCount + 1] = p.pos.y;
 				g_particule_position_size_data[4 * ParticlesCount + 2] = p.pos.z;
-
 				g_particule_position_size_data[4 * ParticlesCount + 3] = p.size;
-
 				g_particule_color_data[4 * ParticlesCount + 0] = p.r;
 				g_particule_color_data[4 * ParticlesCount + 1] = p.g;
 				g_particule_color_data[4 * ParticlesCount + 2] = p.b;
