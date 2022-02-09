@@ -107,7 +107,7 @@ glm::quat rotation_x = glm::normalize(glm::angleAxis(307 * 0.03f, glm::vec3(0, 1
 float dy = 0;
 float dx = 0;
 
-glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
+glm::vec3 lightDir = glm::normalize(glm::vec3(1, -100, 1));
 
 glm::mat4 createCameraMatrix()
 {

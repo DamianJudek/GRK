@@ -46,8 +46,8 @@ float P_DIST_DETAIL = 0.08f;
 float P_DIST_GENERAL = 0.01f;
 float P_SCALE_DETAIL = 0.8f;
 float P_SCALE_GENERAL = 10.0f;
-
-
+float BASE_CUBE_SCALE = 0.25f;
+float CHUNK_AREA = TERRAIN_CHUNK_SIZE/2;
 
 std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = { {}, {}, {}, {} };
 
@@ -82,13 +82,14 @@ std::vector<glm::vec3>& getChunk(int x, int y) {
 	if (x < 0) quadrant += 2;
 	if (y < 0) quadrant += 1;
 
-	x = abs(x);
-	y = abs(y);
-
 	makeChunk(x, y);
-	return _terrainChunks[quadrant][x][y];
+	return _terrainChunks[quadrant][abs(x)][abs(y)];
 }
 
+// return value is vec2 with x and y being the chunk coords
+glm::vec2 findClosestChunk(glm::vec3 pos) {
+	return glm::vec2(floor(pos.x / CHUNK_AREA), floor(pos.z / CHUNK_AREA));
+}
 
 /*
 std::vector<std::vector<std::vector<float*>>> _terrainChunks = { {}, {}, {}, {} };
@@ -235,20 +236,29 @@ void renderScene()
 	drawObjectTexture(submarine, submarineTransformation, submarineTextureId);
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 
-
-	/*for (float i = 0.0f; i < 1; i += 0.1f) {
-		cout << endl;
-		for (float j = 0.0f; j < 1; j += 0.1f) {
-			drawObjectTexture(terrainCube, glm::translate(glm::vec3(i*5, glm::perlin(glm::vec2(i, j)), j * 5)) * glm::scale(glm::vec3(0.25f)), terrainTextureId);
-		}
-	}*/
-
-	for (int j = 0; j < 8; j++) {
+	/*for (int j = 0; j < 4; j++) {
 		for (int k = 0; k < 8; k++) {
 			std::vector<glm::vec3>& chunk_ref = getChunk(j, k);
 			for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++) {
-				drawObjectTexture(terrainCube, glm::translate(chunk_ref[i]) * glm::scale(glm::vec3(0.25f)), terrainTextureId);
+				if ((i / 16) % 2 == 0 && i % 2 == 0)drawObjectTexture(terrainCube, glm::translate(chunk_ref[i]) * glm::scale(glm::vec3(BASE_CUBE_SCALE * 2)), terrainTextureId);
+
 			}
+		}
+	}*/
+
+	glm::vec2 cur_chunk = findClosestChunk(cameraPos);
+
+	for (int j = -3; j <= 3; j++) {
+		for (int k = -3; k <= 3; k++) {
+			std::vector<glm::vec3>& chunk_ref = getChunk(cur_chunk.x + j, cur_chunk.y + k);
+			float scale_multiplier = 2^max(abs(j),abs(k));
+			for (int row = 0; row < TERRAIN_CHUNK_SIZE; row++) {
+				for (int col = 0; col < TERRAIN_CHUNK_SIZE; col++) {
+					drawObjectTexture(terrainCube, glm::translate(chunk_ref[row*TERRAIN_CHUNK_SIZE + col] - glm::vec3(BASE_CUBE_SCALE)) * glm::scale(glm::vec3(BASE_CUBE_SCALE)), terrainTextureId);
+				}
+			}
+
+			
 		}
 	}
 
