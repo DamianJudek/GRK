@@ -40,6 +40,9 @@ GLuint fishTextureId;
 Core::RenderContext coin;
 GLuint coinTextureId;
 
+Core::RenderContext ground;
+GLuint groundTexture;
+
 glm::vec4 coins[10];
 int numberOfCoins = 0;
 
@@ -128,7 +131,8 @@ void renderScene()
 			drawObjectTexture(coin, glm::translate(glm::vec3(coins[j].x, coins[j].y, coins[j].z)), submarineTextureId);
 		}	
 		*/
-		if ((((cameraPos.x - coins[j].x) > (-10.0f) && (cameraPos.x - coins[j].x) < (10.0f)) && ((cameraPos.y - coins[j].y) > (-10.0f) && (cameraPos.y - coins[j].y) < (10.0f)) && ((cameraPos.z - coins[j].z) > (-10.0f) && (cameraPos.z - coins[j].z) < (10.0f))) && coins[j].w == 1) {
+		
+		if (getCoin && (((cameraPos.x - coins[j].x) > (-20.0f) && (cameraPos.x - coins[j].x) < (20.0f)) && ((cameraPos.y - coins[j].y) > (-20.0f) && (cameraPos.y - coins[j].y) < (20.0f)) && ((cameraPos.z - coins[j].z) > (-20.0f) && (cameraPos.z - coins[j].z) < (20.0f))) && coins[j].w == 1) {
 			coins[j].w = 0;
 			numberOfCoins += 1;
 			std::cout << numberOfCoins << std::endl;
@@ -137,6 +141,8 @@ void renderScene()
 			drawObjectTexture(coin, glm::translate(glm::vec3(coins[j].x, coins[j].y, coins[j].z)), coinTextureId);
 		}
 	}	
+
+	drawObjectTexture(ground, glm::scale(submarineTransformation, glm::vec3(1200, 300, 1200)), groundTexture);
 
 	glUseProgram(0);
 	glutSwapBuffers();
@@ -169,6 +175,9 @@ void initModels() {
 
 	loadModelToContext("models/Coin.obj", coin);
 	coinTextureId = Core::LoadTexture("textures/Textures/BTC_Albedo.png");
+
+	loadModelToContext("models/terrain_textured.obj", ground);
+	groundTexture = Core::LoadTexture("textures/sand.jpg");
 }
 
 void createSkybox() {

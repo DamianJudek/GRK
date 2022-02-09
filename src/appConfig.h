@@ -26,6 +26,7 @@ extern glm::vec3 lightDir;
 extern glm::mat4 createCameraMatrix();
 extern void keyboard(unsigned char key, int x, int y);
 extern void mouse(int x, int y);
+extern bool getCoin;
 
 extern std::vector<std::vector<glm::vec3>> paths;
 extern std::vector<std::vector<glm::quat>> path_rots;

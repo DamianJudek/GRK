@@ -16,6 +16,8 @@ int index = 0;
 
 float skyboxSize = 300.0f;
 
+bool getCoin = false;
+
 float skyboxVertices[] = {
     -skyboxSize, skyboxSize, -skyboxSize,
     -skyboxSize, -skyboxSize, -skyboxSize,
@@ -110,7 +112,7 @@ glm::quat rotation_y = glm::normalize(glm::angleAxis(209 * 0.03f, glm::vec3(1, 0
 glm::quat rotation_x = glm::normalize(glm::angleAxis(307 * 0.03f, glm::vec3(0, 1, 0)));
 float dy = 0;
 float dx = 0;
-glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
+glm::vec3 lightDir = glm::normalize(glm::vec3(1, -100, 1));
 glm::vec3 cameraVertical;
 
 vector <glm::vec3> geysersLocations = {
@@ -148,6 +150,7 @@ glm::mat4 createCameraMatrix()
 
 void keyboard(unsigned char key, int x, int y)
 {
+    getCoin = false;
     float angleSpeed = 0.5f;
     float moveSpeed = 2.f;
     switch (key)
@@ -160,6 +163,7 @@ void keyboard(unsigned char key, int x, int y)
     case 'a': cameraPos -= cameraSide * moveSpeed; break;
     case '0': cameraPos = glm::vec3(0, 3, 0); index = 0; break;
     case 'r': cameraPos = glm::vec3(0, 0, 1); break;
+    case 'l': getCoin = true;
     }
 }
 
