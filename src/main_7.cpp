@@ -18,6 +18,7 @@
 #include "stb_image.h"
 #include "Texture.h"
 #include "appConfig.h"
+#include <deque>
 
 using namespace std;
 
@@ -32,6 +33,143 @@ Core::Shader_Loader shaderLoader;
 
 Core::RenderContext submarine;
 GLuint submarineTextureId;
+
+
+
+// TERRAIN STUFF
+
+Core::RenderContext terrainCube;
+GLuint terrainTextureId;
+
+int TERRAIN_CHUNK_SIZE = 16;
+float P_DIST_DETAIL = 0.08f;
+float P_DIST_GENERAL = 0.01f;
+float P_SCALE_DETAIL = 0.8f;
+float P_SCALE_GENERAL = 10.0f;
+
+
+
+std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = { {}, {}, {}, {} };
+
+void makeChunk(int x, int y) {
+	int quadrant = 0;
+
+	if (x < 0) quadrant += 2;
+	if (y < 0) quadrant += 1;
+
+	while (_terrainChunks[quadrant].size() <= abs(x)) {
+		_terrainChunks[quadrant].push_back({});
+	}
+
+	while (_terrainChunks[quadrant][abs(x)].size() <= abs(y)) {
+		_terrainChunks[quadrant][abs(x)].push_back({});
+	}
+	
+	if (_terrainChunks[quadrant][abs(x)][abs(y)].size() == 0) {
+		for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++) {
+			float x_pos = x * TERRAIN_CHUNK_SIZE + float(i / TERRAIN_CHUNK_SIZE);
+			float y_pos = y * TERRAIN_CHUNK_SIZE + float(i % TERRAIN_CHUNK_SIZE);
+			float perlin_sample_general = glm::perlin(glm::vec2(x_pos * P_DIST_GENERAL, y_pos * P_DIST_GENERAL));
+			float perlin_sample_detail = glm::perlin(glm::vec2(x_pos * P_DIST_DETAIL, y_pos * P_DIST_DETAIL));
+			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos * 0.5f, perlin_sample_general * P_SCALE_GENERAL + perlin_sample_detail * P_SCALE_DETAIL, y_pos * 0.5f));
+		}
+	}
+}
+
+std::vector<glm::vec3>& getChunk(int x, int y) {
+	int quadrant = 0;
+
+	if (x < 0) quadrant += 2;
+	if (y < 0) quadrant += 1;
+
+	x = abs(x);
+	y = abs(y);
+
+	makeChunk(x, y);
+	return _terrainChunks[quadrant][x][y];
+}
+
+
+/*
+std::vector<std::vector<std::vector<float*>>> _terrainChunks = { {}, {}, {}, {} };
+// outermost vector is wrapper for the 4 quadrants ((x,y): ++, +-, -+, -- respectively)
+// second vectors are quadrants
+// third vectors are the rows of the specific quadrants
+// innermost vectors are pointers to first elements of specific chunks
+// all the access should be handled by getChunk() function which returns the inntermost vector reference
+// that might change though haha
+// please don't touch this monstrosity
+
+int TERRAIN_CHUNK_X = 8;
+int TERRAIN_CHUNK_Y = 8;
+float PERLIN_SCALE = 0.1f;
+
+float* makeChunk(int quadrant, int x, int y) {
+	std::vector< std::vector<glm::vec3>> vertices_temp = {};
+
+	for (int i = 0; i < TERRAIN_CHUNK_X + 1; i++) {
+		vertices_temp.push_back({});
+		for (int j = 0; j < TERRAIN_CHUNK_Y + 1; j++) {
+			float perlin_val = glm::perlin(glm::vec2((float)i * PERLIN_SCALE, (float)j * PERLIN_SCALE));
+			vertices_temp[i].push_back(glm::vec3(i, j, perlin_val));
+		}
+	}
+
+	float* vertices = (float*)calloc(3*3*2* TERRAIN_CHUNK_X * TERRAIN_CHUNK_Y, sizeof(float)); // 3 coords of 3 verts of 2 triangles in square times 8 rows times 8 columns
+
+	std::vector<glm::vec2> vert_helper = {
+		glm::vec2(0,0),
+		glm::vec2(0,1),
+		glm::vec2(1,0),
+		glm::vec2(0,1),
+		glm::vec2(1,0),
+		glm::vec2(1,1)
+	};
+
+	int index = 0;
+	for (int i = 0; i < TERRAIN_CHUNK_X; i++) {
+		for (int j = 0; j < TERRAIN_CHUNK_Y; j++) {
+			for (int vert = 0; vert < 6; vert++) {
+				vertices[index] = vertices_temp[i + vert_helper[vert].x][j + vert_helper[vert].y].x;
+				vertices[index+1] = vertices_temp[i + vert_helper[vert].x][j + vert_helper[vert].y].y;
+				vertices[index+2] = vertices_temp[i + vert_helper[vert].x][j + vert_helper[vert].y].z;
+				index = index + 3;
+			}
+		}
+	}
+
+	_terrainChunks[quadrant][x][y] = vertices;
+
+	return vertices;
+}
+
+float* getChunk(int x, int y) {
+	int quadrant = 0;
+
+	if (x < 0) quadrant += 2;
+	if (y < 0) quadrant += 1;
+
+	x = abs(x);
+	y = abs(y);
+
+	int needToGen = 0;
+	if (_terrainChunks[quadrant].size() >= x) {
+		needToGen = 1;
+		_terrainChunks[quadrant].resize(x);
+	}
+	if (_terrainChunks[quadrant][x].size() >= y) {
+		needToGen = 1;
+		_terrainChunks[quadrant][x].resize(y);
+	}
+
+	if(needToGen) makeChunk(quadrant, x, y);
+
+	return _terrainChunks[quadrant][x][y];
+};
+*/
+
+
+// TERRAIN STUFF END
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
 {
@@ -98,6 +236,27 @@ void renderScene()
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 
 
+	/*for (float i = 0.0f; i < 1; i += 0.1f) {
+		cout << endl;
+		for (float j = 0.0f; j < 1; j += 0.1f) {
+			drawObjectTexture(terrainCube, glm::translate(glm::vec3(i*5, glm::perlin(glm::vec2(i, j)), j * 5)) * glm::scale(glm::vec3(0.25f)), terrainTextureId);
+		}
+	}*/
+
+	for (int j = 0; j < 8; j++) {
+		for (int k = 0; k < 8; k++) {
+			std::vector<glm::vec3>& chunk_ref = getChunk(j, k);
+			for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++) {
+				drawObjectTexture(terrainCube, glm::translate(chunk_ref[i]) * glm::scale(glm::vec3(0.25f)), terrainTextureId);
+			}
+		}
+	}
+
+	
+
+	
+
+
 	glUseProgram(0);
 	glutSwapBuffers();
 }
@@ -118,6 +277,9 @@ void loadModelToContext(std::string path, Core::RenderContext& context)
 void initModels() {
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
 	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
+
+	loadModelToContext("models/terrain_cube.obj", terrainCube);
+	terrainTextureId = Core::LoadTexture("textures/sand.jpg");
 }
 
 void createSkybox() {
