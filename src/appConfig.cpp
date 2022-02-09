@@ -17,6 +17,9 @@ int index = 0;
 float skyboxSize = 300.0f;
 
 bool getCoin = false;
+bool createBubble = false;
+
+float timeOfLastBubbleCreation = 0;
 
 float skyboxVertices[] = {
     -skyboxSize, skyboxSize, -skyboxSize,
@@ -151,6 +154,7 @@ glm::mat4 createCameraMatrix()
 void keyboard(unsigned char key, int x, int y)
 {
     getCoin = false;
+    createBubble = false;
     float angleSpeed = 0.5f;
     float moveSpeed = 2.f;
     switch (key)
@@ -163,7 +167,8 @@ void keyboard(unsigned char key, int x, int y)
     case 'a': cameraPos -= cameraSide * moveSpeed; break;
     case '0': cameraPos = glm::vec3(0, 3, 0); index = 0; break;
     case 'r': cameraPos = glm::vec3(0, 0, 1); break;
-    case 'l': getCoin = true;
+    case 'l': getCoin = true; break;
+    case 'p': createBubble = true; break;
     }
 }
 
@@ -186,6 +191,7 @@ std::vector<std::vector<glm::vec3>> paths{};
 std::vector<std::vector<glm::quat>> path_rots{};
 
 std::vector<Fish*> fishe;
+std::vector<Bubble*> bubbles;
 
 glm::mat4 animationMatrix(float time, Fish* cur_fish) {
     std::vector<glm::vec3>& cur_path = paths[cur_fish->p_id];
@@ -296,4 +302,8 @@ void initPathRots() {
 
 void initFish(int amount) {
     for (int i = 0; i < amount; i++) fishe.push_back(new Fish(rand() % paths.size(), i * dist(gen)));
+}
+
+void makeBubble(float creationTime, glm::vec3 vector) {
+    bubbles.push_back(new Bubble(creationTime, vector));
 }

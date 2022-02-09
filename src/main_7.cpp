@@ -43,10 +43,33 @@ GLuint coinTextureId;
 Core::RenderContext ground;
 GLuint groundTexture;
 
+Core::RenderContext bubble;
+
 glm::vec4 coins[10];
 int numberOfCoins = 0;
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
+{
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+
+	GLuint program = programColor;
+
+	glUseProgram(program);
+
+	glUniform3f(glGetUniformLocation(program, "objectColor"), color.x, color.y, color.z);
+	glUniform3f(glGetUniformLocation(program, "lightDir"), lightDir.x, lightDir.y, lightDir.z);
+
+	glm::mat4 transformation = perspectiveMatrix * cameraMatrix * modelMatrix;
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelViewProjectionMatrix"), 1, GL_FALSE, (float*)&transformation);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float*)&modelMatrix);
+
+	Core::DrawContext(context);
+
+	glUseProgram(0);
+}
+
+void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec4 color)
 {
 	GLuint program = programColor;
 
@@ -142,6 +165,24 @@ void renderScene()
 		}
 	}	
 
+	if (createBubble && numberOfCoins > 0) {
+		if (current_time - timeOfLastBubbleCreation > 1) {
+			makeBubble(current_time, cameraPos);
+			numberOfCoins -= 1;
+			std::cout << "blipek" << std::endl;
+			timeOfLastBubbleCreation = current_time;
+			
+		}
+		else {
+			std::cout << current_time - timeOfLastBubbleCreation << std::endl;
+		}
+		createBubble = false;
+	}
+
+	for (int i = 0; i < bubbles.size(); i++) {
+		drawObjectColor(bubble, glm::translate(glm::vec3(bubbles[i]->position.x + 5, bubbles[i]->position.y + 5 + (current_time - bubbles[i]->creationTime), bubbles[i]->position.z)), glm::vec3(0.5, 0.5, 0.5));
+	}
+
 	drawObjectTexture(ground, glm::scale(submarineTransformation, glm::vec3(1200, 300, 1200)), groundTexture);
 
 	glUseProgram(0);
@@ -178,6 +219,8 @@ void initModels() {
 
 	loadModelToContext("models/terrain_textured.obj", ground);
 	groundTexture = Core::LoadTexture("textures/sand.jpg");
+
+	loadModelToContext("models/sphere.obj", bubble);
 }
 
 void createSkybox() {
