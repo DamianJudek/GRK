@@ -1,4 +1,4 @@
-﻿#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 
 #include <iostream>
 #include <cmath>
@@ -17,8 +17,8 @@
 #include "stb_image.h"
 #include "Texture.h"
 #include "appConfig.h"
-#include "Particles.h"
 
+#include "Particles.h"
 #include "Physics.h"
 
 using namespace std;
@@ -35,6 +35,68 @@ Core::Shader_Loader shaderLoader;
 
 Core::RenderContext submarine;
 GLuint submarineTextureId;
+
+
+// TERRAIN STUFF
+
+Core::RenderContext terrainCube;
+GLuint terrainTextureId;
+
+int TERRAIN_CHUNK_SIZE = 16;
+int TERRAIN_RENDER_DISTANCE = 9;
+float P_DIST_DETAIL = 0.08f;
+float P_DIST_GENERAL = 0.01f;
+float P_SCALE_DETAIL = 0.8f;
+float P_SCALE_GENERAL = 10.0f;
+float BASE_CUBE_SCALE = 0.25f;
+float CHUNK_AREA = TERRAIN_CHUNK_SIZE/2;
+
+// vectors starting from the outermost are: everything, quadrants (required because of negative coordinates), rows of chunks, chunks
+// chunk vectors hold positions of cubes in the chunk in a single wrapping line
+// please don't access this manually if you don't have to
+std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = { {}, {}, {}, {} };
+
+void makeChunk(int x, int y) {
+	int quadrant = 0;
+
+	if (x < 0) quadrant += 2;
+	if (y < 0) quadrant += 1;
+
+	while (_terrainChunks[quadrant].size() <= abs(x)) {
+		_terrainChunks[quadrant].push_back({});
+	}
+
+	while (_terrainChunks[quadrant][abs(x)].size() <= abs(y)) {
+		_terrainChunks[quadrant][abs(x)].push_back({});
+	}
+	
+	if (_terrainChunks[quadrant][abs(x)][abs(y)].size() == 0) {
+		for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++) {
+			float x_pos = x * TERRAIN_CHUNK_SIZE + float(i / TERRAIN_CHUNK_SIZE);
+			float y_pos = y * TERRAIN_CHUNK_SIZE + float(i % TERRAIN_CHUNK_SIZE);
+			float perlin_sample_general = glm::perlin(glm::vec2(x_pos * P_DIST_GENERAL, y_pos * P_DIST_GENERAL));
+			float perlin_sample_detail = glm::perlin(glm::vec2(x_pos * P_DIST_DETAIL, y_pos * P_DIST_DETAIL));
+			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos * 0.5f, perlin_sample_general * P_SCALE_GENERAL + perlin_sample_detail * P_SCALE_DETAIL, y_pos * 0.5f));
+		}
+	}
+}
+
+std::vector<glm::vec3>& getChunk(int x, int y) {
+	int quadrant = 0;
+
+	if (x < 0) quadrant += 2;
+	if (y < 0) quadrant += 1;
+
+	makeChunk(x, y);
+	return _terrainChunks[quadrant][abs(x)][abs(y)];
+}
+
+// return value is vec2 with x and y being the chunk coords
+glm::vec2 findClosestChunk(glm::vec3 pos) {
+	return glm::vec2(floor(pos.x / CHUNK_AREA), floor(pos.z / CHUNK_AREA));
+}
+
+// TERRAIN STUFF END
 
 Core::RenderContext ground;
 GLuint groundTexture;
@@ -149,6 +211,24 @@ void renderScene()
 		drawObjectTexture(fish_models[fishe[i]->model_id], glm::scale(glm::rotate(animationMatrix(current_time + fishe[i]->t_offset, fishe[i]), 4.71238f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(1.f, 1.f, 1.f)), fishTextureId);
 	}
 
+
+	glm::vec2 cur_chunk = findClosestChunk(cameraPos);
+
+	for (int j = -TERRAIN_RENDER_DISTANCE; j <= TERRAIN_RENDER_DISTANCE; j++) {
+		for (int k = -TERRAIN_RENDER_DISTANCE; k <= TERRAIN_RENDER_DISTANCE; k++) {
+			std::vector<glm::vec3>& chunk_ref = getChunk(cur_chunk.x + j, cur_chunk.y + k);
+			float scale_multiplier = fmax(1, pow(2, fmax(ceil(abs(j) / 3), ceil(abs(k) / 3))));
+
+			for (int row = 0; row < TERRAIN_CHUNK_SIZE; row += scale_multiplier) {
+				for (int col = 0; col < TERRAIN_CHUNK_SIZE; col += scale_multiplier) {
+					drawObjectTexture(terrainCube, glm::translate(chunk_ref[row*TERRAIN_CHUNK_SIZE + col] + glm::vec3(BASE_CUBE_SCALE * scale_multiplier, -BASE_CUBE_SCALE * scale_multiplier, BASE_CUBE_SCALE * scale_multiplier)) * glm::scale(glm::vec3(BASE_CUBE_SCALE * scale_multiplier)), terrainTextureId);
+				}
+			}
+		}
+
+	}
+
+
 	glUseProgram(0);
 	glutSwapBuffers();
 }
@@ -171,6 +251,9 @@ void initModels()
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
 	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
 
+	loadModelToContext("models/terrain_cube.obj", terrainCube);
+	terrainTextureId = Core::LoadTexture("textures/sand.jpg");
+
 	loadModelToContext("models/matteucia_struthiopteris_1.obj", flowerOne);
 	flowerOneTexture = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
 	loadModelToContext("models/senecio_1.obj", flowerTwo);
@@ -185,6 +268,7 @@ void initModels()
 	loadModelToContext("models/FishV2.obj", fish_models[1]);
 	loadModelToContext("models/FishV3.obj", fish_models[2]);
 	loadModelToContext("models/FishV4.obj", fish_models[3]);
+
 }
 
 void createSkybox()
