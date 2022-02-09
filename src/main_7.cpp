@@ -40,7 +40,7 @@ GLuint fishTextureId;
 Core::RenderContext coin;
 GLuint coinTextureId;
 
-glm::vec3 coins[10];
+glm::vec4 coins[10];
 int numberOfCoins = 0;
 
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
@@ -115,11 +115,27 @@ void renderScene()
 	}
 
 	for (int j = 0; j < 10; j++) {
-		if (((cameraPos.x - coins[j].x) > (-1.0f) && (cameraPos.x - coins[j].x) < (1.0f)) || ((cameraPos.y - coins[j].y) > (-1.0f) && (cameraPos.y - coins[j].y) < (1.0f)) || ((cameraPos.z - coins[j].z) > (-1.0f) && (cameraPos.z - coins[j].z) < (1.0f))) {
+		/*
+		if ((((cameraPos.x - coins[j].x) > (-10.0f) && (cameraPos.x - coins[j].x) < (10.0f)) && ((cameraPos.y - coins[j].y) > (-10.0f) && (cameraPos.y - coins[j].y) < (10.0f)) && ((cameraPos.z - coins[j].z) > (-10.0f) && (cameraPos.z - coins[j].z) < (10.0f))) && coins[j] != cameraPos) {
+			coins[j] = glm::vec4(cameraPos, 0);
+			numberOfCoins += 1;
+			std::cout << numberOfCoins << std::endl;
 			continue;
+			
 		} else {
-			 drawObjectTexture(coin, glm::translate(coins[j]), coinTextureId);
+			 //drawObjectTexture(coin, glm::translate(coins[j]), coinTextureId);
+			 //drawObjectColor(coin, glm::translate(coins[j]), glm::vec3(0.8,0.5,0.5));
+			drawObjectTexture(coin, glm::translate(glm::vec3(coins[j].x, coins[j].y, coins[j].z)), submarineTextureId);
 		}	
+		*/
+		if ((((cameraPos.x - coins[j].x) > (-10.0f) && (cameraPos.x - coins[j].x) < (10.0f)) && ((cameraPos.y - coins[j].y) > (-10.0f) && (cameraPos.y - coins[j].y) < (10.0f)) && ((cameraPos.z - coins[j].z) > (-10.0f) && (cameraPos.z - coins[j].z) < (10.0f))) && coins[j].w == 1) {
+			coins[j].w = 0;
+			numberOfCoins += 1;
+			std::cout << numberOfCoins << std::endl;
+		}
+		if (coins[j].w == 1) {
+			drawObjectTexture(coin, glm::translate(glm::vec3(coins[j].x, coins[j].y, coins[j].z)), coinTextureId);
+		}
 	}	
 
 	glUseProgram(0);
@@ -151,7 +167,7 @@ void initModels() {
 	loadModelToContext("models/FishV3.obj", fish_models[2]);
 	loadModelToContext("models/FishV4.obj", fish_models[3]);
 
-	loadModelToContext("models/medal.obj", coin);
+	loadModelToContext("models/Coin.obj", coin);
 	coinTextureId = Core::LoadTexture("textures/Textures/BTC_Albedo.png");
 }
 
@@ -188,7 +204,7 @@ void init()
 	initFish(300);
 
 	for (int i = 0; i < 10; i++) {
-		coins[i] = glm::ballRand(100.0);
+		coins[i] = glm::vec4(glm::ballRand(100.0), 1);
 		coins[i].y = 0;
 	}
 }

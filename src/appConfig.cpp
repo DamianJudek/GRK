@@ -57,7 +57,7 @@ float skyboxVertices[] = {
     skyboxSize, -skyboxSize, -skyboxSize,
     skyboxSize, -skyboxSize, -skyboxSize,
     -skyboxSize, -skyboxSize, skyboxSize,
-    skyboxSize, -skyboxSize, skyboxSize};
+    skyboxSize, -skyboxSize, skyboxSize };
 
 std::vector<std::string> faces = {
     "./textures/skybox/right.jpg",
@@ -65,7 +65,7 @@ std::vector<std::string> faces = {
     "./textures/skybox/top.jpg",
     "./textures/skybox/bottom.jpg",
     "./textures/skybox/front.jpg",
-    "./textures/skybox/back.jpg"};
+    "./textures/skybox/back.jpg" };
 
 unsigned int loadCubemap(std::vector<std::string> faces)
 {
@@ -76,11 +76,11 @@ unsigned int loadCubemap(std::vector<std::string> faces)
     int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++)
     {
-        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
         if (data)
         {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
         }
         else
@@ -110,8 +110,16 @@ glm::quat rotation_y = glm::normalize(glm::angleAxis(209 * 0.03f, glm::vec3(1, 0
 glm::quat rotation_x = glm::normalize(glm::angleAxis(307 * 0.03f, glm::vec3(0, 1, 0)));
 float dy = 0;
 float dx = 0;
-
 glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
+glm::vec3 cameraVertical;
+
+vector <glm::vec3> geysersLocations = {
+    { 6.0f, -4.0f, 4.0f},
+    { 26.0f, -4.0f, 27.0f },
+    { 17.0f, -4.0f, 9.0f },
+    { 0.0f, -4.0f, 12.0f },
+    { 14.0f, -4.0f, 24.0f }
+};
 
 glm::mat4 createCameraMatrix()
 {
@@ -131,6 +139,7 @@ glm::mat4 createCameraMatrix()
     cameraDir = inverse_rot * glm::vec3(0, 0, -1);
     glm::vec3 up = glm::vec3(0, 1, 0);
     cameraSide = inverse_rot * glm::vec3(1, 0, 0);
+    cameraVertical = inverse_rot * glm::vec3(0, 1, 0);
     glm::mat4 cameraTranslation;
     cameraTranslation[3] = glm::vec4(-cameraPos, 1.0f);
 
@@ -205,7 +214,7 @@ glm::mat4 animationMatrix(float time, Fish* cur_fish) {
         cur_path[(index - 1) % (cur_fish->p_size)],
         cur_path[(index) % (cur_fish->p_size)],
         cur_path[(index + 1) % (cur_fish->p_size)],
-        cur_path[(index + 2) % (cur_fish->p_size)], 
+        cur_path[(index + 2) % (cur_fish->p_size)],
         t
     );
 
