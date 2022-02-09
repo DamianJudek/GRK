@@ -110,7 +110,7 @@ glm::quat rotation_y = glm::normalize(glm::angleAxis(209 * 0.03f, glm::vec3(1, 0
 glm::quat rotation_x = glm::normalize(glm::angleAxis(307 * 0.03f, glm::vec3(0, 1, 0)));
 float dy = 0;
 float dx = 0;
-glm::vec3 lightDir = glm::normalize(glm::vec3(1, 1, 1));
+glm::vec3 lightDir = glm::normalize(glm::vec3(1, -100.0f, 1));
 glm::vec3 cameraVertical;
 
 vector <glm::vec3> geysersLocations = {

@@ -133,9 +133,9 @@ void renderScene()
 		// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
 	}
 
-	// terrain lol?
-	drawObjectTexture(ground, submarineTransformation, groundTexture);
-	drawObjectColor(ground, submarineTransformation, glm::vec3(0.4, 0.5, 0.7));
+	// terrain lol!
+	drawObjectTexture(ground, glm::scale(submarineTransformation, glm::vec3(1200,300,1200)), groundTexture);
+	//drawObjectColor(ground, glm::scale(submarineTransformation, glm::vec3(5,5,5)), glm::vec3(0.4, 0.5, 0.7));
 
 	// particles
 	simulateParticles(cameraPos);
@@ -176,8 +176,8 @@ void initModels()
 	loadModelToContext("models/senecio_1.obj", flowerTwo);
 	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
 
-	loadModelToContext("models/terrain.obj", ground);
-	groundTexture = Core::LoadTexture("textures/lava.jpg");
+	loadModelToContext("models/terrain_textured.obj", ground);
+	groundTexture = Core::LoadTexture("textures/sand.jpg");
 	loadModelToContext("models/seahorse.obj", seahorse);
 
 	fishTextureId = Core::LoadTexture("textures/PolyPackFish.png");
@@ -222,13 +222,13 @@ void init()
 	}
 
 	initPaths(15,
-						/* path_radius */ glm::vec2(30.0f, 80.0f),
-						/* placement_area_x */ glm::vec2(-150.0f, 150.0f),
-						/* placement_area_y */ glm::vec2(-150.0f, 150.0f),
-						/* placement_area_z */ glm::vec2(0.0f, 100.0f),
-						/* rand_x_offset */ glm::vec2(-30.0f, 30.0f),
-						/* rand_y_offset */ glm::vec2(-30.0f, 30.0f),
-						/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
+		/* path_radius */ glm::vec2(30.0f, 80.0f),
+		/* placement_area_x */ glm::vec2(-150.0f, 150.0f),
+		/* placement_area_y */ glm::vec2(-150.0f, 150.0f),
+		/* placement_area_z */ glm::vec2(0.0f, 100.0f),
+		/* rand_x_offset */ glm::vec2(-30.0f, 30.0f),
+		/* rand_y_offset */ glm::vec2(-30.0f, 30.0f),
+		/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
 	initPathRots();
 	initFish(300);
 }
