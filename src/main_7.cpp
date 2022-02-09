@@ -105,7 +105,6 @@ void drawObjectTexture(Core::RenderContext context, glm::mat4 modelMatrix, GLuin
 	glUseProgram(0);
 }
 
-
 void renderScene()
 {	
 	cameraMatrix = createCameraMatrix();
@@ -141,20 +140,6 @@ void renderScene()
 	}
 
 	for (int j = 0; j < 10; j++) {
-		/*
-		if ((((cameraPos.x - coins[j].x) > (-10.0f) && (cameraPos.x - coins[j].x) < (10.0f)) && ((cameraPos.y - coins[j].y) > (-10.0f) && (cameraPos.y - coins[j].y) < (10.0f)) && ((cameraPos.z - coins[j].z) > (-10.0f) && (cameraPos.z - coins[j].z) < (10.0f))) && coins[j] != cameraPos) {
-			coins[j] = glm::vec4(cameraPos, 0);
-			numberOfCoins += 1;
-			std::cout << numberOfCoins << std::endl;
-			continue;
-			
-		} else {
-			 //drawObjectTexture(coin, glm::translate(coins[j]), coinTextureId);
-			 //drawObjectColor(coin, glm::translate(coins[j]), glm::vec3(0.8,0.5,0.5));
-			drawObjectTexture(coin, glm::translate(glm::vec3(coins[j].x, coins[j].y, coins[j].z)), submarineTextureId);
-		}	
-		*/
-		
 		if (getCoin && (((cameraPos.x - coins[j].x) > (-20.0f) && (cameraPos.x - coins[j].x) < (20.0f)) && ((cameraPos.y - coins[j].y) > (-20.0f) && (cameraPos.y - coins[j].y) < (20.0f)) && ((cameraPos.z - coins[j].z) > (-20.0f) && (cameraPos.z - coins[j].z) < (20.0f))) && coins[j].w == 1) {
 			coins[j].w = 0;
 			numberOfCoins += 1;
@@ -180,7 +165,7 @@ void renderScene()
 	}
 
 	for (int i = 0; i < bubbles.size(); i++) {
-		drawObjectColor(bubble, glm::translate(glm::vec3(bubbles[i]->position.x + 5, bubbles[i]->position.y + 5 + (current_time - bubbles[i]->creationTime), bubbles[i]->position.z)), glm::vec3(0.5, 0.5, 0.5));
+		drawObjectColor(bubble, glm::scale(glm::translate(glm::vec3(bubbles[i]->position.x + 5, bubbles[i]->position.y + 5 + (current_time - bubbles[i]->creationTime), bubbles[i]->position.z)), glm::vec3(1,1,1)), glm::vec3(0.5, 0.5, 0.5));
 	}
 
 	drawObjectTexture(ground, glm::scale(submarineTransformation, glm::vec3(1200, 300, 1200)), groundTexture);
