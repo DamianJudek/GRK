@@ -42,6 +42,7 @@ Core::RenderContext terrainCube;
 GLuint terrainTextureId;
 
 int TERRAIN_CHUNK_SIZE = 16;
+int TERRAIN_RENDER_DISTANCE = 9;
 float P_DIST_DETAIL = 0.08f;
 float P_DIST_GENERAL = 0.01f;
 float P_SCALE_DETAIL = 0.8f;
@@ -49,6 +50,9 @@ float P_SCALE_GENERAL = 10.0f;
 float BASE_CUBE_SCALE = 0.25f;
 float CHUNK_AREA = TERRAIN_CHUNK_SIZE/2;
 
+// vectors starting from the outermost are: everything, quadrants (required because of negative coordinates), rows of chunks, chunks
+// chunk vectors hold positions of cubes in the chunk in a single wrapping line
+// please don't access this manually if you don't have to
 std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = { {}, {}, {}, {} };
 
 void makeChunk(int x, int y) {
@@ -90,85 +94,6 @@ std::vector<glm::vec3>& getChunk(int x, int y) {
 glm::vec2 findClosestChunk(glm::vec3 pos) {
 	return glm::vec2(floor(pos.x / CHUNK_AREA), floor(pos.z / CHUNK_AREA));
 }
-
-/*
-std::vector<std::vector<std::vector<float*>>> _terrainChunks = { {}, {}, {}, {} };
-// outermost vector is wrapper for the 4 quadrants ((x,y): ++, +-, -+, -- respectively)
-// second vectors are quadrants
-// third vectors are the rows of the specific quadrants
-// innermost vectors are pointers to first elements of specific chunks
-// all the access should be handled by getChunk() function which returns the inntermost vector reference
-// that might change though haha
-// please don't touch this monstrosity
-
-int TERRAIN_CHUNK_X = 8;
-int TERRAIN_CHUNK_Y = 8;
-float PERLIN_SCALE = 0.1f;
-
-float* makeChunk(int quadrant, int x, int y) {
-	std::vector< std::vector<glm::vec3>> vertices_temp = {};
-
-	for (int i = 0; i < TERRAIN_CHUNK_X + 1; i++) {
-		vertices_temp.push_back({});
-		for (int j = 0; j < TERRAIN_CHUNK_Y + 1; j++) {
-			float perlin_val = glm::perlin(glm::vec2((float)i * PERLIN_SCALE, (float)j * PERLIN_SCALE));
-			vertices_temp[i].push_back(glm::vec3(i, j, perlin_val));
-		}
-	}
-
-	float* vertices = (float*)calloc(3*3*2* TERRAIN_CHUNK_X * TERRAIN_CHUNK_Y, sizeof(float)); // 3 coords of 3 verts of 2 triangles in square times 8 rows times 8 columns
-
-	std::vector<glm::vec2> vert_helper = {
-		glm::vec2(0,0),
-		glm::vec2(0,1),
-		glm::vec2(1,0),
-		glm::vec2(0,1),
-		glm::vec2(1,0),
-		glm::vec2(1,1)
-	};
-
-	int index = 0;
-	for (int i = 0; i < TERRAIN_CHUNK_X; i++) {
-		for (int j = 0; j < TERRAIN_CHUNK_Y; j++) {
-			for (int vert = 0; vert < 6; vert++) {
-				vertices[index] = vertices_temp[i + vert_helper[vert].x][j + vert_helper[vert].y].x;
-				vertices[index+1] = vertices_temp[i + vert_helper[vert].x][j + vert_helper[vert].y].y;
-				vertices[index+2] = vertices_temp[i + vert_helper[vert].x][j + vert_helper[vert].y].z;
-				index = index + 3;
-			}
-		}
-	}
-
-	_terrainChunks[quadrant][x][y] = vertices;
-
-	return vertices;
-}
-
-float* getChunk(int x, int y) {
-	int quadrant = 0;
-
-	if (x < 0) quadrant += 2;
-	if (y < 0) quadrant += 1;
-
-	x = abs(x);
-	y = abs(y);
-
-	int needToGen = 0;
-	if (_terrainChunks[quadrant].size() >= x) {
-		needToGen = 1;
-		_terrainChunks[quadrant].resize(x);
-	}
-	if (_terrainChunks[quadrant][x].size() >= y) {
-		needToGen = 1;
-		_terrainChunks[quadrant][x].resize(y);
-	}
-
-	if(needToGen) makeChunk(quadrant, x, y);
-
-	return _terrainChunks[quadrant][x][y];
-};
-*/
-
 
 // TERRAIN STUFF END
 
@@ -236,35 +161,23 @@ void renderScene()
 	drawObjectTexture(submarine, submarineTransformation, submarineTextureId);
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 
-	/*for (int j = 0; j < 4; j++) {
-		for (int k = 0; k < 8; k++) {
-			std::vector<glm::vec3>& chunk_ref = getChunk(j, k);
-			for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++) {
-				if ((i / 16) % 2 == 0 && i % 2 == 0)drawObjectTexture(terrainCube, glm::translate(chunk_ref[i]) * glm::scale(glm::vec3(BASE_CUBE_SCALE * 2)), terrainTextureId);
 
-			}
-		}
-	}*/
 
 	glm::vec2 cur_chunk = findClosestChunk(cameraPos);
 
-	for (int j = -3; j <= 3; j++) {
-		for (int k = -3; k <= 3; k++) {
+	for (int j = -TERRAIN_RENDER_DISTANCE; j <= TERRAIN_RENDER_DISTANCE; j++) {
+		for (int k = -TERRAIN_RENDER_DISTANCE; k <= TERRAIN_RENDER_DISTANCE; k++) {
 			std::vector<glm::vec3>& chunk_ref = getChunk(cur_chunk.x + j, cur_chunk.y + k);
-			float scale_multiplier = 2^max(abs(j),abs(k));
-			for (int row = 0; row < TERRAIN_CHUNK_SIZE; row++) {
-				for (int col = 0; col < TERRAIN_CHUNK_SIZE; col++) {
-					drawObjectTexture(terrainCube, glm::translate(chunk_ref[row*TERRAIN_CHUNK_SIZE + col] - glm::vec3(BASE_CUBE_SCALE)) * glm::scale(glm::vec3(BASE_CUBE_SCALE)), terrainTextureId);
+			float scale_multiplier = fmax(1, pow(2, fmax(ceil(abs(j) / 3), ceil(abs(k) / 3))));
+
+			for (int row = 0; row < TERRAIN_CHUNK_SIZE; row += scale_multiplier) {
+				for (int col = 0; col < TERRAIN_CHUNK_SIZE; col += scale_multiplier) {
+					drawObjectTexture(terrainCube, glm::translate(chunk_ref[row*TERRAIN_CHUNK_SIZE + col] + glm::vec3(BASE_CUBE_SCALE * scale_multiplier, -BASE_CUBE_SCALE * scale_multiplier, BASE_CUBE_SCALE * scale_multiplier)) * glm::scale(glm::vec3(BASE_CUBE_SCALE * scale_multiplier)), terrainTextureId);
 				}
 			}
-
-			
 		}
+
 	}
-
-	
-
-	
 
 
 	glUseProgram(0);
