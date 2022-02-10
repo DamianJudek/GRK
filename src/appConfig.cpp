@@ -13,13 +13,13 @@
 using namespace std;
 int index = 0;
 
-float skyboxSize = 300.0f;
+
 
 bool getCoin = false;
 bool createBubble = false;
 
 float timeOfLastBubbleCreation = 0;
-
+float skyboxSize = 300.0f;
 float skyboxVertices[] = {
     -skyboxSize, skyboxSize, -skyboxSize,
     -skyboxSize, -skyboxSize, -skyboxSize,
