@@ -19,6 +19,7 @@
 #include "appConfig.h"
 #include "Particles.h"
 #include "Physics.h"
+#include <random>
 
 using namespace std;
 
@@ -42,17 +43,47 @@ GLuint terrainTextureId;
 
 int TERRAIN_CHUNK_SIZE = 16;
 int TERRAIN_RENDER_DISTANCE = 9;
-float P_DIST_DETAIL = 0.08f;
-float P_DIST_GENERAL = 0.01f;
+float P_DIST_DETAIL = 0.16f;
+float P_DIST_GENERAL = 0.02f;
 float P_SCALE_DETAIL = 0.8f;
 float P_SCALE_GENERAL = 10.0f;
 float BASE_CUBE_SCALE = 0.25f;
 float CHUNK_AREA = TERRAIN_CHUNK_SIZE / 2;
+glm::vec2 PLANTS_PER_CHUNK = glm::vec2(4,6);
+
+struct RandomObject {
+	glm::vec3 pos;
+
+	virtual void renderSelf() = 0;
+};
+
+struct Plant : public RandomObject {
+	int model_id;
+
+	Plant(glm::vec3 pos, int model_id) {
+		this->pos = pos;
+		this->model_id = model_id;
+	}
+
+	void renderSelf() {
+
+	}
+};
+
+struct Coin : public RandomObject {
+	Coin(glm::vec3 pos) {
+		this->pos = pos;
+	}
+	void renderSelf() {
+
+	}
+};
 
 // vectors starting from the outermost are: everything, quadrants (required because of negative coordinates), rows of chunks, chunks
 // chunk vectors hold positions of cubes in the chunk in a single wrapping line
 // please don't access this manually if you don't have to
-std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = {{}, {}, {}, {}};
+std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = { {}, {}, {}, {} };
+std::vector<std::vector<std::vector<std::vector<RandomObject*>>>> _objectChunks = { {}, {}, {}, {} };
 
 float getHeightAtPoint(float x, float y)
 {
@@ -61,6 +92,13 @@ float getHeightAtPoint(float x, float y)
 	return perlin_sample_general * P_SCALE_GENERAL + perlin_sample_detail * P_SCALE_DETAIL;
 }
 
+random_device rd_TEMP;
+mt19937 gen_TEMP(rd_TEMP());
+
+
+uniform_real_distribution<> pos_distr(0.0f, float(TERRAIN_CHUNK_SIZE));
+uniform_real_distribution<> plant_id_distr(0.0f, 1.0f);
+uniform_int_distribution<> plant_amount_distr(PLANTS_PER_CHUNK.x, PLANTS_PER_CHUNK.y);
 void makeChunk(int x, int y)
 {
 	int quadrant = 0;
@@ -73,25 +111,37 @@ void makeChunk(int x, int y)
 	while (_terrainChunks[quadrant].size() <= abs(x))
 	{
 		_terrainChunks[quadrant].push_back({});
+		_objectChunks[quadrant].push_back({});
 	}
 
 	while (_terrainChunks[quadrant][abs(x)].size() <= abs(y))
 	{
 		_terrainChunks[quadrant][abs(x)].push_back({});
+		_objectChunks[quadrant][abs(x)].push_back({});
 	}
 
 	if (_terrainChunks[quadrant][abs(x)][abs(y)].size() == 0)
 	{
 		for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++)
 		{
-			float x_pos = x * TERRAIN_CHUNK_SIZE + float(i / TERRAIN_CHUNK_SIZE);
-			float y_pos = y * TERRAIN_CHUNK_SIZE + float(i % TERRAIN_CHUNK_SIZE);
-			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos * 0.5f, getHeightAtPoint(x_pos, y_pos), y_pos * 0.5f));
+			float x_pos = (x * TERRAIN_CHUNK_SIZE + float(i / TERRAIN_CHUNK_SIZE)) * 0.5f;
+			float y_pos = (y * TERRAIN_CHUNK_SIZE + float(i % TERRAIN_CHUNK_SIZE)) * 0.5f;
+			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos, getHeightAtPoint(x_pos, y_pos), y_pos));
+		}
+		
+		int plant_amount = plant_amount_distr(gen_TEMP);
+		for (int i = 0; i < plant_amount; i++)
+		{
+			float x_pos = (x * TERRAIN_CHUNK_SIZE + pos_distr(gen_TEMP)) * 0.5f;
+			float y_pos = (y * TERRAIN_CHUNK_SIZE + pos_distr(gen_TEMP)) * 0.5f;
+			int plant_id = plant_id_distr(gen_TEMP) < 0.05 ? 0 : 1;
+			RandomObject* temp = new Plant(glm::vec3(x_pos, getHeightAtPoint(x_pos, y_pos), y_pos), plant_id);
+			_objectChunks[quadrant][abs(x)][abs(y)].push_back(temp);
 		}
 	}
 }
 
-std::vector<glm::vec3> &getChunk(int x, int y)
+std::vector<glm::vec3>& getTerrainChunk(int x, int y)
 {
 	int quadrant = 0;
 
@@ -104,6 +154,18 @@ std::vector<glm::vec3> &getChunk(int x, int y)
 	return _terrainChunks[quadrant][abs(x)][abs(y)];
 }
 
+std::vector<RandomObject*>& getObjectChunk(int x, int y)
+{
+	int quadrant = 0;
+
+	if (x < 0)
+		quadrant += 2;
+	if (y < 0)
+		quadrant += 1;
+
+	return _objectChunks[quadrant][abs(x)][abs(y)];
+}
+
 // return value is vec2 with x and y being the chunk coords
 glm::vec2 findClosestChunk(glm::vec3 pos)
 {
@@ -111,10 +173,9 @@ glm::vec2 findClosestChunk(glm::vec3 pos)
 }
 
 // TERRAIN STUFF END
-Core::RenderContext flowerOne;
-GLuint flowerOneTexture;
-Core::RenderContext flowerTwo;
-GLuint flowerTwoTexture;
+
+Core::RenderContext flower_models[2];
+GLuint flowerTextureIds[2];
 
 glm::vec3 buffer[45];
 
@@ -124,9 +185,6 @@ GLuint fishTextureId;
 
 Core::RenderContext coin;
 GLuint coinTextureId;
-
-Core::RenderContext ground;
-GLuint groundTexture;
 
 Core::RenderContext bubble;
 
@@ -201,18 +259,6 @@ void renderScene()
 	drawObjectTexture(submarine, submarineModelMatrix, submarineTextureId);
 	drawObjectTexture(fish_models[0], glm::scale(glm::rotate(submarineTransformation, 4.71239f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(10.f, 10.f, 10.f)), fishTextureId);
 
-	for (int j = 0; j < 45; j++)
-	{
-		if (j % 9 == 0)
-			drawObjectTexture(flowerOne, glm::translate(buffer[j]), flowerOneTexture);
-		else
-			drawObjectTexture(flowerTwo, glm::translate(buffer[j]), flowerTwoTexture);
-	}
-
-	// terrain lol?
-	drawObjectTexture(ground, submarineTransformation, groundTexture);
-	drawObjectColor(ground, submarineTransformation, glm::vec3(0.4, 0.5, 0.7));
-
 	// particles
 	simulateParticles(cameraPos);
 	updateParticles();
@@ -259,13 +305,13 @@ void renderScene()
 		drawObjectColor(bubble, glm::scale(glm::translate(glm::vec3(bubbles[i]->position.x + 5, bubbles[i]->position.y + 5 + (current_time - bubbles[i]->creationTime), bubbles[i]->position.z)), glm::vec3(1, 1, 1)), glm::vec3(0.5, 0.5, 0.5));
 	}
 
-	glm::vec2 cur_chunk = findClosestChunk(cameraPos);
 
+	glm::vec2 cur_chunk = findClosestChunk(cameraPos);
 	for (int j = -TERRAIN_RENDER_DISTANCE; j <= TERRAIN_RENDER_DISTANCE; j++)
 	{
 		for (int k = -TERRAIN_RENDER_DISTANCE; k <= TERRAIN_RENDER_DISTANCE; k++)
 		{
-			std::vector<glm::vec3> &chunk_ref = getChunk(cur_chunk.x + j, cur_chunk.y + k);
+			std::vector<glm::vec3> &chunk_ref = getTerrainChunk(cur_chunk.x + j, cur_chunk.y + k);
 			float scale_multiplier = fmax(1, pow(2, fmax(ceil(abs(j) / 3), ceil(abs(k) / 3))));
 
 			for (int row = 0; row < TERRAIN_CHUNK_SIZE; row += scale_multiplier)
@@ -274,6 +320,11 @@ void renderScene()
 				{
 					drawObjectTexture(terrainCube, glm::translate(chunk_ref[row * TERRAIN_CHUNK_SIZE + col] + glm::vec3(BASE_CUBE_SCALE * scale_multiplier, -BASE_CUBE_SCALE * scale_multiplier, BASE_CUBE_SCALE * scale_multiplier)) * glm::scale(glm::vec3(BASE_CUBE_SCALE * scale_multiplier)), terrainTextureId);
 				}
+			}
+
+			std::vector<RandomObject*>& object_chunk_ref = getObjectChunk(cur_chunk.x + j, cur_chunk.y + k);
+			for (int index = 0; index < object_chunk_ref.size(); index++) {
+				drawObjectTexture(flower_models[static_cast<Plant*>(object_chunk_ref[index])->model_id], glm::translate(object_chunk_ref[index]->pos)* glm::scale(glm::vec3(0.25f)), flowerTextureIds[static_cast<Plant*>(object_chunk_ref[index])->model_id]);
 			}
 		}
 	}
@@ -303,10 +354,10 @@ void initModels()
 	loadModelToContext("models/terrain_cube.obj", terrainCube);
 	terrainTextureId = Core::LoadTexture("textures/sand.jpg");
 
-	loadModelToContext("models/matteucia_struthiopteris_1.obj", flowerOne);
-	flowerOneTexture = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
-	loadModelToContext("models/senecio_1.obj", flowerTwo);
-	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
+	loadModelToContext("models/matteucia_struthiopteris_1.obj", flower_models[0]);
+	flowerTextureIds[0] = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
+	loadModelToContext("models/senecio_1.obj", flower_models[1]);
+	flowerTextureIds[1] = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
 
 	loadModelToContext("models/seahorse.obj", seahorse);
 
@@ -318,9 +369,6 @@ void initModels()
 
 	loadModelToContext("models/Coin.obj", coin);
 	coinTextureId = Core::LoadTexture("textures/Textures/BTC_Albedo.png");
-
-	loadModelToContext("models/terrain_textured.obj", ground);
-	groundTexture = Core::LoadTexture("textures/sand.jpg");
 
 	loadModelToContext("models/sphere.obj", bubble);
 }
@@ -356,7 +404,7 @@ void init()
 	for (int i = 0; i < 45; i++)
 	{
 		buffer[i] = glm::ballRand(100.0);
-		buffer[i].y = 0;
+		buffer[i].y = getHeightAtPoint(buffer[i].x, buffer[i].z);
 	}
 
 	initPaths(15,
