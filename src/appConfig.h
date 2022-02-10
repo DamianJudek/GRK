@@ -1,6 +1,9 @@
 #include <string>
 #include <vector>
 #include "glm.hpp"
+#include <queue>
+
+using namespace std;
 
 using namespace std; 
 
@@ -26,6 +29,9 @@ extern glm::vec3 lightDir;
 extern glm::mat4 createCameraMatrix();
 extern void keyboard(unsigned char key, int x, int y);
 extern void mouse(int x, int y);
+extern bool getCoin;
+extern bool createBubble;
+extern float timeOfLastBubbleCreation;
 
 extern std::vector<std::vector<glm::vec3>> paths;
 extern std::vector<std::vector<glm::quat>> path_rots;
@@ -43,6 +49,18 @@ struct Fish {
         model_id = (int)(rand() % 4);
     }
 };
+
+struct Bubble {
+    float creationTime;
+    glm::vec3 position;
+    Bubble(float creationTime, glm::vec3 position) {
+        this->creationTime = creationTime;
+        this->position = position;
+    }
+};
+
+extern std::vector<Bubble*> bubbles;
+extern void makeBubble(float creationTime, glm::vec3 position);
 
 extern std::vector<Fish*> fishe;
 extern glm::mat4 animationMatrix(float time, Fish* cur_fish);

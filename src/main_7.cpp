@@ -1,4 +1,4 @@
-﻿#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 
 #include <iostream>
 #include <cmath>
@@ -18,7 +18,6 @@
 #include "Texture.h"
 #include "appConfig.h"
 #include "Particles.h"
-
 #include "Physics.h"
 
 using namespace std;
@@ -36,9 +35,77 @@ Core::Shader_Loader shaderLoader;
 Core::RenderContext submarine;
 GLuint submarineTextureId;
 
-Core::RenderContext ground;
-GLuint groundTexture;
+// TERRAIN STUFF
 
+Core::RenderContext terrainCube;
+GLuint terrainTextureId;
+
+int TERRAIN_CHUNK_SIZE = 16;
+int TERRAIN_RENDER_DISTANCE = 9;
+float P_DIST_DETAIL = 0.08f;
+float P_DIST_GENERAL = 0.01f;
+float P_SCALE_DETAIL = 0.8f;
+float P_SCALE_GENERAL = 10.0f;
+float BASE_CUBE_SCALE = 0.25f;
+float CHUNK_AREA = TERRAIN_CHUNK_SIZE / 2;
+
+// vectors starting from the outermost are: everything, quadrants (required because of negative coordinates), rows of chunks, chunks
+// chunk vectors hold positions of cubes in the chunk in a single wrapping line
+// please don't access this manually if you don't have to
+std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = {{}, {}, {}, {}};
+
+void makeChunk(int x, int y)
+{
+	int quadrant = 0;
+
+	if (x < 0)
+		quadrant += 2;
+	if (y < 0)
+		quadrant += 1;
+
+	while (_terrainChunks[quadrant].size() <= abs(x))
+	{
+		_terrainChunks[quadrant].push_back({});
+	}
+
+	while (_terrainChunks[quadrant][abs(x)].size() <= abs(y))
+	{
+		_terrainChunks[quadrant][abs(x)].push_back({});
+	}
+
+	if (_terrainChunks[quadrant][abs(x)][abs(y)].size() == 0)
+	{
+		for (int i = 0; i < TERRAIN_CHUNK_SIZE * TERRAIN_CHUNK_SIZE; i++)
+		{
+			float x_pos = x * TERRAIN_CHUNK_SIZE + float(i / TERRAIN_CHUNK_SIZE);
+			float y_pos = y * TERRAIN_CHUNK_SIZE + float(i % TERRAIN_CHUNK_SIZE);
+			float perlin_sample_general = glm::perlin(glm::vec2(x_pos * P_DIST_GENERAL, y_pos * P_DIST_GENERAL));
+			float perlin_sample_detail = glm::perlin(glm::vec2(x_pos * P_DIST_DETAIL, y_pos * P_DIST_DETAIL));
+			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos * 0.5f, perlin_sample_general * P_SCALE_GENERAL + perlin_sample_detail * P_SCALE_DETAIL, y_pos * 0.5f));
+		}
+	}
+}
+
+std::vector<glm::vec3> &getChunk(int x, int y)
+{
+	int quadrant = 0;
+
+	if (x < 0)
+		quadrant += 2;
+	if (y < 0)
+		quadrant += 1;
+
+	makeChunk(x, y);
+	return _terrainChunks[quadrant][abs(x)][abs(y)];
+}
+
+// return value is vec2 with x and y being the chunk coords
+glm::vec2 findClosestChunk(glm::vec3 pos)
+{
+	return glm::vec2(floor(pos.x / CHUNK_AREA), floor(pos.z / CHUNK_AREA));
+}
+
+// TERRAIN STUFF END
 Core::RenderContext flowerOne;
 GLuint flowerOneTexture;
 Core::RenderContext flowerTwo;
@@ -50,7 +117,39 @@ Core::RenderContext seahorse;
 Core::RenderContext fish_models[4];
 GLuint fishTextureId;
 
+Core::RenderContext coin;
+GLuint coinTextureId;
+
+Core::RenderContext ground;
+GLuint groundTexture;
+
+Core::RenderContext bubble;
+
+glm::vec4 coins[10];
+int numberOfCoins = 0;
+
 void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec3 color)
+{
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+
+	GLuint program = programColor;
+
+	glUseProgram(program);
+
+	glUniform3f(glGetUniformLocation(program, "objectColor"), color.x, color.y, color.z);
+	glUniform3f(glGetUniformLocation(program, "lightDir"), lightDir.x, lightDir.y, lightDir.z);
+
+	glm::mat4 transformation = perspectiveMatrix * cameraMatrix * modelMatrix;
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelViewProjectionMatrix"), 1, GL_FALSE, (float *)&transformation);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float *)&modelMatrix);
+
+	Core::DrawContext(context);
+
+	glUseProgram(0);
+}
+
+void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec4 color)
 {
 	GLuint program = programColor;
 
@@ -137,6 +236,59 @@ void renderScene()
 		drawObjectTexture(fish_models[fishe[i]->model_id], glm::scale(glm::rotate(animationMatrix(current_time + fishe[i]->t_offset, fishe[i]), 4.71238f, glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(1.f, 1.f, 1.f)), fishTextureId);
 	}
 
+	for (int j = 0; j < 10; j++)
+	{
+		if (getCoin && (((cameraPos.x - coins[j].x) > (-20.0f) && (cameraPos.x - coins[j].x) < (20.0f)) && ((cameraPos.y - coins[j].y) > (-20.0f) && (cameraPos.y - coins[j].y) < (20.0f)) && ((cameraPos.z - coins[j].z) > (-20.0f) && (cameraPos.z - coins[j].z) < (20.0f))) && coins[j].w == 1)
+		{
+			coins[j].w = 0;
+			numberOfCoins += 1;
+			std::cout << numberOfCoins << std::endl;
+		}
+		if (coins[j].w == 1)
+		{
+			drawObjectTexture(coin, glm::translate(glm::vec3(coins[j].x, coins[j].y, coins[j].z)), coinTextureId);
+		}
+	}
+
+	if (createBubble && numberOfCoins > 0)
+	{
+		if (current_time - timeOfLastBubbleCreation > 1)
+		{
+			makeBubble(current_time, cameraPos);
+			numberOfCoins -= 1;
+			timeOfLastBubbleCreation = current_time;
+		}
+		else
+		{
+			std::cout << current_time - timeOfLastBubbleCreation << std::endl;
+		}
+		createBubble = false;
+	}
+
+	for (int i = 0; i < bubbles.size(); i++)
+	{
+		drawObjectColor(bubble, glm::scale(glm::translate(glm::vec3(bubbles[i]->position.x + 5, bubbles[i]->position.y + 5 + (current_time - bubbles[i]->creationTime), bubbles[i]->position.z)), glm::vec3(1, 1, 1)), glm::vec3(0.5, 0.5, 0.5));
+	}
+
+	glm::vec2 cur_chunk = findClosestChunk(cameraPos);
+
+	for (int j = -TERRAIN_RENDER_DISTANCE; j <= TERRAIN_RENDER_DISTANCE; j++)
+	{
+		for (int k = -TERRAIN_RENDER_DISTANCE; k <= TERRAIN_RENDER_DISTANCE; k++)
+		{
+			std::vector<glm::vec3> &chunk_ref = getChunk(cur_chunk.x + j, cur_chunk.y + k);
+			float scale_multiplier = fmax(1, pow(2, fmax(ceil(abs(j) / 3), ceil(abs(k) / 3))));
+
+			for (int row = 0; row < TERRAIN_CHUNK_SIZE; row += scale_multiplier)
+			{
+				for (int col = 0; col < TERRAIN_CHUNK_SIZE; col += scale_multiplier)
+				{
+					drawObjectTexture(terrainCube, glm::translate(chunk_ref[row * TERRAIN_CHUNK_SIZE + col] + glm::vec3(BASE_CUBE_SCALE * scale_multiplier, -BASE_CUBE_SCALE * scale_multiplier, BASE_CUBE_SCALE * scale_multiplier)) * glm::scale(glm::vec3(BASE_CUBE_SCALE * scale_multiplier)), terrainTextureId);
+				}
+			}
+		}
+	}
+
 	glUseProgram(0);
 	glutSwapBuffers();
 }
@@ -159,6 +311,9 @@ void initModels()
 	loadModelToContext("models/YellowSubmarine.obj", submarine);
 	submarineTextureId = Core::LoadTexture("textures/submarine-tex.png");
 
+	loadModelToContext("models/terrain_cube.obj", terrainCube);
+	terrainTextureId = Core::LoadTexture("textures/sand.jpg");
+
 	loadModelToContext("models/matteucia_struthiopteris_1.obj", flowerOne);
 	flowerOneTexture = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
 	loadModelToContext("models/senecio_1.obj", flowerTwo);
@@ -173,6 +328,14 @@ void initModels()
 	loadModelToContext("models/FishV2.obj", fish_models[1]);
 	loadModelToContext("models/FishV3.obj", fish_models[2]);
 	loadModelToContext("models/FishV4.obj", fish_models[3]);
+
+	loadModelToContext("models/Coin.obj", coin);
+	coinTextureId = Core::LoadTexture("textures/Textures/BTC_Albedo.png");
+
+	loadModelToContext("models/terrain_textured.obj", ground);
+	groundTexture = Core::LoadTexture("textures/sand.jpg");
+
+	loadModelToContext("models/sphere.obj", bubble);
 }
 
 void createSkybox()
@@ -219,6 +382,12 @@ void init()
 		/* rand_z_offset */ glm::vec2(-10.0f, 10.0f));
 	initPathRots();
 	initFish(300);
+
+	for (int i = 0; i < 10; i++)
+	{
+		coins[i] = glm::vec4(glm::ballRand(100.0), 1);
+		coins[i].y = 0;
+	}
 }
 
 void shutdown()
