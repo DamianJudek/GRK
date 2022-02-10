@@ -54,6 +54,13 @@ float CHUNK_AREA = TERRAIN_CHUNK_SIZE / 2;
 // please don't access this manually if you don't have to
 std::vector<std::vector<std::vector<std::vector<glm::vec3>>>> _terrainChunks = {{}, {}, {}, {}};
 
+float getHeightAtPoint(float x, float y)
+{
+	float perlin_sample_general = glm::perlin(glm::vec2(x * P_DIST_GENERAL, y * P_DIST_GENERAL));
+	float perlin_sample_detail = glm::perlin(glm::vec2(x * P_DIST_DETAIL, y * P_DIST_DETAIL));
+	return perlin_sample_general * P_SCALE_GENERAL + perlin_sample_detail * P_SCALE_DETAIL;
+}
+
 void makeChunk(int x, int y)
 {
 	int quadrant = 0;
@@ -79,9 +86,7 @@ void makeChunk(int x, int y)
 		{
 			float x_pos = x * TERRAIN_CHUNK_SIZE + float(i / TERRAIN_CHUNK_SIZE);
 			float y_pos = y * TERRAIN_CHUNK_SIZE + float(i % TERRAIN_CHUNK_SIZE);
-			float perlin_sample_general = glm::perlin(glm::vec2(x_pos * P_DIST_GENERAL, y_pos * P_DIST_GENERAL));
-			float perlin_sample_detail = glm::perlin(glm::vec2(x_pos * P_DIST_DETAIL, y_pos * P_DIST_DETAIL));
-			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos * 0.5f, perlin_sample_general * P_SCALE_GENERAL + perlin_sample_detail * P_SCALE_DETAIL, y_pos * 0.5f));
+			_terrainChunks[quadrant][abs(x)][abs(y)].push_back(glm::vec3(x_pos * 0.5f, getHeightAtPoint(x_pos, y_pos), y_pos * 0.5f));
 		}
 	}
 }
@@ -149,24 +154,6 @@ void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::ve
 	glUseProgram(0);
 }
 
-void drawObjectColor(Core::RenderContext context, glm::mat4 modelMatrix, glm::vec4 color)
-{
-	GLuint program = programColor;
-
-	glUseProgram(program);
-
-	glUniform3f(glGetUniformLocation(program, "objectColor"), color.x, color.y, color.z);
-	glUniform3f(glGetUniformLocation(program, "lightDir"), lightDir.x, lightDir.y, lightDir.z);
-
-	glm::mat4 transformation = perspectiveMatrix * cameraMatrix * modelMatrix;
-	glUniformMatrix4fv(glGetUniformLocation(program, "modelViewProjectionMatrix"), 1, GL_FALSE, (float *)&transformation);
-	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, GL_FALSE, (float *)&modelMatrix);
-
-	Core::DrawContext(context);
-
-	glUseProgram(0);
-}
-
 void drawObjectTexture(Core::RenderContext context, glm::mat4 modelMatrix, GLuint textureId)
 {
 	GLuint program = programTexture;
@@ -216,20 +203,10 @@ void renderScene()
 
 	for (int j = 0; j < 45; j++)
 	{
-		if (j % 15 == 0)
-		{
+		if (j % 9 == 0)
 			drawObjectTexture(flowerOne, glm::translate(buffer[j]), flowerOneTexture);
-			// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
-		}
 		else
-		{
-			if (j % 2 == 0)
-			{
-				drawObjectTexture(flowerTwo, glm::translate(buffer[j]), flowerTwoTexture);
-				// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
-			}
-		}
-		// drawObjectTexture(submarine, glm::translate(buffer[j]), submarineTextureId);
+			drawObjectTexture(flowerTwo, glm::translate(buffer[j]), flowerTwoTexture);
 	}
 
 	// terrain lol?
@@ -331,8 +308,6 @@ void initModels()
 	loadModelToContext("models/senecio_1.obj", flowerTwo);
 	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
 
-	loadModelToContext("models/terrain.obj", ground);
-	groundTexture = Core::LoadTexture("textures/lava.jpg");
 	loadModelToContext("models/seahorse.obj", seahorse);
 
 	fishTextureId = Core::LoadTexture("textures/PolyPackFish.png");
