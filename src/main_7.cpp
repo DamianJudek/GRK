@@ -154,7 +154,6 @@ void renderScene()
 		if (current_time - timeOfLastBubbleCreation > 1) {
 			makeBubble(current_time, cameraPos);
 			numberOfCoins -= 1;
-			std::cout << "blipek" << std::endl;
 			timeOfLastBubbleCreation = current_time;
 			
 		}
