@@ -319,8 +319,6 @@ void initModels()
 	loadModelToContext("models/senecio_1.obj", flowerTwo);
 	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
 
-	loadModelToContext("models/terrain.obj", ground);
-	groundTexture = Core::LoadTexture("textures/lava.jpg");
 	loadModelToContext("models/seahorse.obj", seahorse);
 
 	fishTextureId = Core::LoadTexture("textures/PolyPackFish.png");
