@@ -62,7 +62,7 @@ float skyboxVertices[] = {
     skyboxSize, -skyboxSize, -skyboxSize,
     skyboxSize, -skyboxSize, -skyboxSize,
     -skyboxSize, -skyboxSize, skyboxSize,
-    skyboxSize, -skyboxSize, skyboxSize };
+    skyboxSize, -skyboxSize, skyboxSize};
 
 std::vector<std::string> faces = {
     "./textures/skybox/right.jpg",
@@ -70,7 +70,7 @@ std::vector<std::string> faces = {
     "./textures/skybox/top.jpg",
     "./textures/skybox/bottom.jpg",
     "./textures/skybox/front.jpg",
-    "./textures/skybox/back.jpg" };
+    "./textures/skybox/back.jpg"};
 
 unsigned int loadCubemap(std::vector<std::string> faces)
 {
@@ -81,11 +81,11 @@ unsigned int loadCubemap(std::vector<std::string> faces)
     int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++)
     {
-        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
         if (data)
         {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
         }
         else
@@ -115,16 +115,15 @@ glm::quat rotation_y = glm::normalize(glm::angleAxis(209 * 0.03f, glm::vec3(1, 0
 glm::quat rotation_x = glm::normalize(glm::angleAxis(307 * 0.03f, glm::vec3(0, 1, 0)));
 float dy = 0;
 float dx = 0;
-glm::vec3 lightDir = glm::normalize(glm::vec3(1, -100, 1));
+glm::vec3 lightDir = glm::normalize(glm::vec3(50, -100, 50));
 glm::vec3 cameraVertical;
 
-vector <glm::vec3> geysersLocations = {
-    { 6.0f, -4.0f, 4.0f},
-    { 26.0f, -4.0f, 27.0f },
-    { 17.0f, -4.0f, 9.0f },
-    { 0.0f, -4.0f, 12.0f },
-    { 14.0f, -4.0f, 24.0f }
-};
+vector<glm::vec3> geysersLocations = {
+    {6.0f, -4.0f, 4.0f},
+    {26.0f, -4.0f, 27.0f},
+    {17.0f, -4.0f, 9.0f},
+    {0.0f, -4.0f, 12.0f},
+    {14.0f, -4.0f, 24.0f}};
 
 glm::mat4 createCameraMatrix()
 {
@@ -159,23 +158,44 @@ void keyboard(unsigned char key, int x, int y)
     float moveSpeed = 2.f;
     switch (key)
     {
-    case 'z': cameraAngle -= angleSpeed; break;
-    case 'x': cameraAngle += angleSpeed; break;
-    case 'w': cameraPos += cameraDir * moveSpeed; break;
-    case 's': cameraPos -= cameraDir * moveSpeed; break;
-    case 'd': cameraPos += cameraSide * moveSpeed; break;
-    case 'a': cameraPos -= cameraSide * moveSpeed; break;
-    case '0': cameraPos = glm::vec3(0, 3, 0); index = 0; break;
-    case 'r': cameraPos = glm::vec3(0, 0, 1); break;
-    case 'l': getCoin = true; break;
-    case 'p': createBubble = true; break;
+    case 'z':
+        cameraAngle -= angleSpeed;
+        break;
+    case 'x':
+        cameraAngle += angleSpeed;
+        break;
+    case 'w':
+        cameraPos += cameraDir * moveSpeed;
+        break;
+    case 's':
+        cameraPos -= cameraDir * moveSpeed;
+        break;
+    case 'd':
+        cameraPos += cameraSide * moveSpeed;
+        break;
+    case 'a':
+        cameraPos -= cameraSide * moveSpeed;
+        break;
+    case '0':
+        cameraPos = glm::vec3(0, 3, 0);
+        index = 0;
+        break;
+    case 'r':
+        cameraPos = glm::vec3(0, 0, 1);
+        break;
+    case 'l':
+        getCoin = true;
+        break;
+    case 'p':
+        createBubble = true;
+        break;
     }
 }
 
-
 void mouse(int x, int y)
 {
-    if (old_x >= 0) {
+    if (old_x >= 0)
+    {
         delta_x = x - old_x;
         delta_y = y - old_y;
     }
@@ -190,33 +210,36 @@ uniform_real_distribution<> dist(0.0f, 1.0f);
 std::vector<std::vector<glm::vec3>> paths{};
 std::vector<std::vector<glm::quat>> path_rots{};
 
-std::vector<Fish*> fishe;
-std::vector<Bubble*> bubbles;
+std::vector<Fish *> fishe;
+std::vector<Bubble *> bubbles;
 
-glm::mat4 animationMatrix(float time, Fish* cur_fish) {
-    std::vector<glm::vec3>& cur_path = paths[cur_fish->p_id];
+glm::mat4 animationMatrix(float time, Fish *cur_fish)
+{
+    std::vector<glm::vec3> &cur_path = paths[cur_fish->p_id];
 
     float speed = 1.;
     time = time * speed;
     std::vector<float> distances;
     float timeStep = 0;
-    for (int i = 0; i < cur_fish->p_size; i++) {
+    for (int i = 0; i < cur_fish->p_size; i++)
+    {
         float local_distance = (cur_path[i] - cur_path[(i + 1) % cur_fish->p_size]).length();
         timeStep += local_distance;
         distances.push_back(local_distance);
     }
     time = fmod(time, timeStep);
 
-    //index of first keyPoint
+    // index of first keyPoint
     int index = 0;
 
-    //increment until at the current keyPoint
-    while (distances[index] <= time) {
+    // increment until at the current keyPoint
+    while (distances[index] <= time)
+    {
         time = time - distances[index];
         index += 1;
     }
 
-    //t coefficient between 0 and 1 for interpolation
+    // t coefficient between 0 and 1 for interpolation
     float t = time / distances[index];
 
     // position interpolation
@@ -225,12 +248,12 @@ glm::mat4 animationMatrix(float time, Fish* cur_fish) {
         cur_path[(index) % (cur_fish->p_size)],
         cur_path[(index + 1) % (cur_fish->p_size)],
         cur_path[(index + 2) % (cur_fish->p_size)],
-        t
-    );
+        t);
 
     // rotation interpolation
     glm::quat rq[4];
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         rq[i] = path_rots[cur_fish->p_id][(index - 1 + i) % cur_fish->p_size];
     }
 
@@ -245,23 +268,24 @@ glm::mat4 animationMatrix(float time, Fish* cur_fish) {
 }
 
 void initPaths(int path_amount,
-    glm::vec2 path_radius = glm::vec2(40.0f, 60.0f),
-    glm::vec2 placement_area_x = glm::vec2(40.0f, 60.0f),
-    glm::vec2 placement_area_y = glm::vec2(40.0f, 60.0f),
-    glm::vec2 placement_area_z = glm::vec2(10.0f, 25.0f),
-    glm::vec2 rand_x_offset = glm::vec2(-15.0f, 15.0f),
-    glm::vec2 rand_y_offset = glm::vec2(-15.0f, 15.0f),
-    glm::vec2 rand_z_offset = glm::vec2(-5.0f, 5.0f)
-) {
-    for (int path_id = 0; path_id < path_amount; path_id++) {
+               glm::vec2 path_radius = glm::vec2(40.0f, 60.0f),
+               glm::vec2 placement_area_x = glm::vec2(40.0f, 60.0f),
+               glm::vec2 placement_area_y = glm::vec2(40.0f, 60.0f),
+               glm::vec2 placement_area_z = glm::vec2(10.0f, 25.0f),
+               glm::vec2 rand_x_offset = glm::vec2(-15.0f, 15.0f),
+               glm::vec2 rand_y_offset = glm::vec2(-15.0f, 15.0f),
+               glm::vec2 rand_z_offset = glm::vec2(-5.0f, 5.0f))
+{
+    for (int path_id = 0; path_id < path_amount; path_id++)
+    {
         paths.push_back({});
 
-        //radius
+        // radius
         uniform_real_distribution<> distr(path_radius.x, path_radius.y);
         float crx = distr(gen);
         float cry = distr(gen);
 
-        //center coords
+        // center coords
         distr = uniform_real_distribution<>(placement_area_x.x, placement_area_x.y);
         float cx = distr(gen);
         distr = uniform_real_distribution<>(placement_area_y.x, placement_area_y.y);
@@ -272,25 +296,31 @@ void initPaths(int path_amount,
         std::vector<float> coordvec;
 
         distr = uniform_real_distribution<>(rand_x_offset.x, rand_x_offset.y);
-        for (int i = 0; i < 12; i++) coordvec.push_back(cx + cos(i * 30 * 3.14 / 180.0) * crx + distr(gen));
+        for (int i = 0; i < 12; i++)
+            coordvec.push_back(cx + cos(i * 30 * 3.14 / 180.0) * crx + distr(gen));
 
         distr = uniform_real_distribution<>(rand_z_offset.x, rand_z_offset.y);
-        for (int i = 0; i < 12; i++) coordvec.push_back(cz + distr(gen));
+        for (int i = 0; i < 12; i++)
+            coordvec.push_back(cz + distr(gen));
 
         distr = uniform_real_distribution<>(rand_y_offset.x, rand_y_offset.y);
-        for (int i = 0; i < 12; i++) coordvec.push_back(cy + sin(i * 30 * 3.14 / 180.0) * cry + distr(gen));
+        for (int i = 0; i < 12; i++)
+            coordvec.push_back(cy + sin(i * 30 * 3.14 / 180.0) * cry + distr(gen));
 
-
-        for (int i = 0; i < 12; i++) paths[paths.size() - 1].push_back(glm::vec3(coordvec[i], coordvec[i + 12], coordvec[i + 24]));
+        for (int i = 0; i < 12; i++)
+            paths[paths.size() - 1].push_back(glm::vec3(coordvec[i], coordvec[i + 12], coordvec[i + 24]));
     }
 }
 
-void initPathRots() {
-    for (int i = 0; i < paths.size(); i++) {
+void initPathRots()
+{
+    for (int i = 0; i < paths.size(); i++)
+    {
         glm::vec3 oldDirection = glm::vec3(0, 0, 1);
         glm::quat oldRotationCamera = glm::quat(1, 0, 0, 0);
         path_rots.push_back({});
-        for (int j = 0; j < paths[i].size(); j++) {
+        for (int j = 0; j < paths[i].size(); j++)
+        {
             glm::vec3 newDir = paths[i][(j + 1) % paths[i].size()] - paths[i][(j) % paths[i].size()];
             rotationCamera = glm::normalize(glm::rotationCamera(glm::normalize(oldDirection), glm::normalize(newDir)) * oldRotationCamera);
             path_rots[i].push_back(rotationCamera);
@@ -300,10 +330,13 @@ void initPathRots() {
     }
 }
 
-void initFish(int amount) {
-    for (int i = 0; i < amount; i++) fishe.push_back(new Fish(rand() % paths.size(), i * dist(gen)));
+void initFish(int amount)
+{
+    for (int i = 0; i < amount; i++)
+        fishe.push_back(new Fish(rand() % paths.size(), i * dist(gen)));
 }
 
-void makeBubble(float creationTime, glm::vec3 vector) {
+void makeBubble(float creationTime, glm::vec3 vector)
+{
     bubbles.push_back(new Bubble(creationTime, vector));
 }

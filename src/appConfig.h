@@ -5,6 +5,8 @@
 
 using namespace std;
 
+using namespace std; 
+
 extern float skyboxVertices[108];
 extern vector<std::string> faces;
 extern unsigned int loadCubemap(std::vector<std::string> faces);
