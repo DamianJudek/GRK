@@ -2,13 +2,26 @@
 #include <vector>
 #include "glm.hpp"
 #include <queue>
+#include "Render_Utils.h"
 
 using namespace std;
 
+//shaders
+extern GLuint particlesShader;
+extern GLuint colorShader;
+extern GLuint textureShader;
+extern GLuint skyboxShader;
+
 //skybox
+extern GLuint skyboxVAO, skyboxVBO;
 extern float skyboxVertices[108];
 extern vector<std::string> faces;
 extern unsigned int loadCubemap(std::vector<std::string> faces);
+extern unsigned int cubemapTexture;
+
+//submarine
+extern Core::RenderContext submarine;
+extern GLuint submarineTextureId;
 
 //particles
 extern vector <glm::vec3> geysersLocations;
@@ -27,21 +40,30 @@ extern glm::quat rotation_y;
 extern glm::quat rotation_x;
 extern float dy;
 extern float dx;
+
 //!!!
 extern glm::mat4 createCameraMatrix();
-extern void keyboard(unsigned char key, int x, int y);
-extern void mouse(int x, int y);
 
 //light
 extern glm::vec3 lightDir;
 
+//plants
+extern Core::RenderContext flowerOne;
+extern GLuint flowerOneTexture;
+extern Core::RenderContext flowerTwo;
+extern GLuint flowerTwoTexture;
+extern glm::vec3 plantsBuffer[];
+
 //coins
+extern Core::RenderContext coin;
+extern GLuint coinTextureId;
 extern bool getCoin;
+extern glm::vec4 coins[];
+extern int numberOfCoins;
 
 //bubbles
 extern bool createBubble;
 extern float timeOfLastBubbleCreation;
-
 struct Bubble {
     float creationTime;
     glm::vec3 position;
@@ -50,12 +72,13 @@ struct Bubble {
         this->position = position;
     }
 };
-
-
 extern std::vector<Bubble*> bubbles;
 extern void makeBubble(float creationTime, glm::vec3 position);
+extern Core::RenderContext bubble;
 
 //fish
+extern Core::RenderContext fish_models[];
+extern GLuint fishTextureId;
 extern std::vector<std::vector<glm::vec3>> paths;
 extern std::vector<std::vector<glm::quat>> path_rots;
 
@@ -74,15 +97,25 @@ struct Fish {
 };
 
 extern std::vector<Fish*> fishe;
+extern vector <glm::vec2> fishKeyframes;
 
 extern glm::mat4 animationMatrix(float time, Fish* cur_fish);
 extern void initPaths(int path_amount,
-    glm::vec2 path_radius,
-    glm::vec2 placement_area_x,
-    glm::vec2 placement_area_y,
-    glm::vec2 placement_area_z,
-    glm::vec2 rand_x_offset,
-    glm::vec2 rand_y_offset,
-    glm::vec2 rand_z_offset);
+    vector <glm::vec2> fishKeyframes);
 extern void initPathRots();
 extern void initFish(int amount);
+
+//Terrain
+extern Core::RenderContext ground;
+extern GLuint groundTexture;
+extern vector<vector<vector<vector<glm::vec3>>>> _terrainChunks;
+extern Core::RenderContext terrainCube;
+extern GLuint terrainTextureId;
+extern int TERRAIN_CHUNK_SIZE;
+extern int TERRAIN_RENDER_DISTANCE;
+extern float P_DIST_DETAIL;
+extern float P_DIST_GENERAL;
+extern float P_SCALE_DETAIL;
+extern float P_SCALE_GENERAL;
+extern float BASE_CUBE_SCALE;
+extern float CHUNK_AREA;
