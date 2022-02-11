@@ -20,6 +20,7 @@
 #include "utils.h"
 #include "Particles.h"
 #include "Physics.h"
+#include <random>
 
 using namespace std;
 
@@ -36,7 +37,6 @@ void renderScene()
 
 	drawSkybox();
 	drawSubmarine();
-	drawPlants();
 	drawParticles();
 	drawFish(current_time);
 	drawCoins();
@@ -55,10 +55,10 @@ void initModels()
 	loadModelToContext("models/terrain_cube.obj", terrainCube);
 	terrainTextureId = Core::LoadTexture("textures/sand.jpg");
 
-	loadModelToContext("models/matteucia_struthiopteris_1.obj", flowerOne);
-	flowerOneTexture = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
-	loadModelToContext("models/senecio_1.obj", flowerTwo);
-	flowerTwoTexture = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
+	loadModelToContext("models/matteucia_struthiopteris_1.obj", flower_models[0]);
+	flowerTextureIds[0] = Core::LoadTexture("textures/matteuccia_struthiopteris_leaf_1_01_diffuse.jpg");
+	loadModelToContext("models/senecio_1.obj", flower_models[1]);
+	flowerTextureIds[1] = Core::LoadTexture("textures/senecio_m_leaf_1_1_diffuse_1.jpg");
 
 	fishTextureId = Core::LoadTexture("textures/PolyPackFish.png");
 	loadModelToContext("models/FishV1.obj", fish_models[0]);
@@ -68,9 +68,6 @@ void initModels()
 
 	loadModelToContext("models/Coin.obj", coin);
 	coinTextureId = Core::LoadTexture("textures/Textures/BTC_Albedo.png");
-
-	loadModelToContext("models/terrain_textured.obj", ground);
-	groundTexture = Core::LoadTexture("textures/sand.jpg");
 
 	loadModelToContext("models/sphere.obj", bubble);
 }
@@ -91,7 +88,6 @@ void init()
 
 	initParticles();
 	initModels();
-	initPlants();
 	initPaths(15, fishKeyframes);
 	initPathRots();
 	initFish(300);

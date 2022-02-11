@@ -14,13 +14,13 @@
 
 using namespace std;
 
-//shaders
+// shaders
 GLuint particlesShader;
 GLuint colorShader;
 GLuint textureShader;
 GLuint skyboxShader;
 
-//skybox
+// skybox
 GLuint skyboxVAO, skyboxVBO;
 float skyboxSize = 300.0f;
 float skyboxVertices[] = {
@@ -104,20 +104,19 @@ unsigned int loadCubemap(std::vector<std::string> faces)
 }
 unsigned int cubemapTexture;
 
-//submarine
+// submarine
 Core::RenderContext submarine;
 GLuint submarineTextureId;
 
-//particles
+// particles
 vector<glm::vec3> geysersLocations = {
     {62.0f, -2.0f, 11.0f},
     {86.0f, -2.0f, 27.0f},
     {39.0f, -2.0f, 77.0f},
     {1.0f, -2.0f, 42.0f},
-    {-20.0f, -2.0f, -4.0f}
-};
+    {-20.0f, -2.0f, -4.0f}};
 
-//camera
+// camera
 float cameraAngle = 0;
 glm::vec3 cameraSide;
 glm::vec3 cameraDir;
@@ -157,34 +156,32 @@ glm::mat4 createCameraMatrix()
     return glm::mat4_cast(rotationCamera) * cameraTranslation;
 }
 
-//light
+// light
 glm::vec3 lightDir = glm::normalize(glm::vec3(50, -100, 50));
 
-//plants
-Core::RenderContext flowerOne;
-GLuint flowerOneTexture;
-Core::RenderContext flowerTwo;
-GLuint flowerTwoTexture;
+// plants
+Core::RenderContext flower_models[2];
+GLuint flowerTextureIds[2];
 glm::vec3 plantsBuffer[45];
 
-//coins
+// coins
 Core::RenderContext coin;
 GLuint coinTextureId;
 bool getCoin = false;
 glm::vec4 coins[10];
 int numberOfCoins = 0;
 
-//bubbles
+// bubbles
 bool createBubble = false;
 float timeOfLastBubbleCreation = 0;
-std::vector<Bubble*> bubbles;
+std::vector<Bubble *> bubbles;
 Core::RenderContext bubble;
 void makeBubble(float creationTime, glm::vec3 vector)
 {
     bubbles.push_back(new Bubble(creationTime, vector));
 }
 
-//fish
+// fish
 random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<> dist(0.0f, 1.0f);
@@ -201,8 +198,7 @@ vector<glm::vec2> fishKeyframes = {
     /* placement_area_z */ glm::vec2(0.0f, 100.0f),
     /* rand_x_offset */ glm::vec2(-30.0f, 30.0f),
     /* rand_y_offset */ glm::vec2(-30.0f, 30.0f),
-    /* rand_z_offset */ glm::vec2(-10.0f, 10.0f)
-};
+    /* rand_z_offset */ glm::vec2(-10.0f, 10.0f)};
 
 glm::mat4 animationMatrix(float time, Fish *cur_fish)
 {
@@ -259,8 +255,7 @@ glm::mat4 animationMatrix(float time, Fish *cur_fish)
 }
 
 void initPaths(int path_amount,
-    vector <glm::vec2> fishKeyframes
-  )
+               vector<glm::vec2> fishKeyframes)
 {
     glm::vec2 path_radius = fishKeyframes[0];
     glm::vec2 placement_area_x = fishKeyframes[1];
@@ -330,22 +325,22 @@ void initFish(int amount)
         fishe.push_back(new Fish(rand() % paths.size(), i * dist(gen)));
 }
 
-//Terrain
+// Terrain
 
 // vectors starting from the outermost are: everything, quadrants (required because of negative coordinates), rows of chunks, chunks
 // chunk vectors hold positions of cubes in the chunk in a single wrapping line
 // please don't access this manually if you don't have to
 
-Core::RenderContext ground;
-GLuint groundTexture;
-vector<vector<vector<vector<glm::vec3>>>> _terrainChunks = { {}, {}, {}, {} };
+vector<vector<vector<vector<glm::vec3>>>> _terrainChunks = {{}, {}, {}, {}};
+vector<vector<vector<vector<RandomObject *>>>> _objectChunks = {{}, {}, {}, {}};
 Core::RenderContext terrainCube;
 GLuint terrainTextureId;
 int TERRAIN_CHUNK_SIZE = 16;
 int TERRAIN_RENDER_DISTANCE = 9;
-float P_DIST_DETAIL = 0.08f;
-float P_DIST_GENERAL = 0.01f;
+float P_DIST_DETAIL = 0.16f;
+float P_DIST_GENERAL = 0.02f;
 float P_SCALE_DETAIL = 0.8f;
 float P_SCALE_GENERAL = 10.0f;
 float BASE_CUBE_SCALE = 0.25f;
 float CHUNK_AREA = TERRAIN_CHUNK_SIZE / 2;
+glm::vec2 PLANTS_PER_CHUNK = glm::vec2(4, 6);
