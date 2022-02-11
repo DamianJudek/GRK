@@ -27,14 +27,13 @@ double lastTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 struct Particle
 {
 	glm::vec3 pos, speed;
-	unsigned char r, g, b, a; // Color
+	unsigned char r, g, b, a; 
 	float size, angle, weight;
-	float life;						// Remaining life of the particle. if <0 : dead and unused.
-	float cameradistance; // *Squared* distance to the camera. if dead : -1.0f
+	float life;	
+	float cameradistance;
 
 	bool operator<(const Particle &that) const
 	{
-		// Sort in reverse order : far particles drawn first.
 		return this->cameradistance > that.cameradistance;
 	}
 };
@@ -128,18 +127,15 @@ GLuint loadDDS(const char *imagepath)
 		return 0;
 	}
 
-	// Create one OpenGL texture
 	GLuint textureID;
 	glGenTextures(1, &textureID);
 
-	// "Bind" the newly created texture : all future texture functions will modify this texture
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
 	unsigned int offset = 0;
 
-	/* load the mipmaps */
 	for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
 	{
 		unsigned int size = ((width + 3) / 4) * ((height + 3) / 4) * blockSize;
@@ -150,7 +146,6 @@ GLuint loadDDS(const char *imagepath)
 		width /= 2;
 		height /= 2;
 
-		// Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
 		if (width < 1)
 			width = 1;
 		if (height < 1)
@@ -214,7 +209,7 @@ void simulateParticles(glm::vec3 cameraPos)
 	for (int i = 0; i < newparticles; i++)
 	{
 		int particleIndex = FindUnusedParticle();
-		ParticlesContainer[particleIndex].life = 5.0f; // This particle will live 5 seconds.
+		ParticlesContainer[particleIndex].life = 5.0f;
 		ParticlesContainer[particleIndex].pos = geysersLocations[locationIndex];
 		locationIndex = (locationIndex + 1) % 5;
 
@@ -287,24 +282,18 @@ void bindParticles(glm::vec3 cameraSide, glm::vec3 cameraVertical, glm::mat4 per
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Use our shader
 	glUseProgram(programParticles);
 
-	// Vertex shader
 	GLuint CameraRight_worldspace_ID = glGetUniformLocation(programParticles, "CameraRight_worldspace");
 	GLuint CameraUp_worldspace_ID = glGetUniformLocation(programParticles, "CameraUp_worldspace");
 	GLuint ViewProjMatrixID = glGetUniformLocation(programParticles, "VP");
 
-	// fragment shader
 	GLuint TextureID = glGetUniformLocation(programParticles, "myTextureSampler");
 
-	// Bind our texture in Texture Unit 0
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, particleTexture);
-	// Set our "myTextureSampler" sampler to user Texture Unit 0
 	glUniform1i(TextureID, 0);
 
-	// Same as the billboards tutorial
 	glUniform3f(CameraRight_worldspace_ID, cameraSide.x, cameraSide.y, cameraSide.z);
 	glUniform3f(CameraUp_worldspace_ID, cameraVertical.x, cameraVertical.y, cameraVertical.z);
 
@@ -314,36 +303,34 @@ void bindParticles(glm::vec3 cameraSide, glm::vec3 cameraVertical, glm::mat4 per
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, billboard_vertex_buffer);
 	glVertexAttribPointer(
-			0,				// attribute. No particular reason for 0, but must match the layout in the shader.
-			3,				// size
-			GL_FLOAT, // type
-			GL_FALSE, // normalized?
-			0,				// stride
-			(void *)0 // array buffer offset
+			0,				
+			3,				
+			GL_FLOAT, 
+			GL_FALSE, 
+			0,				
+			(void *)0
 	);
 
-	// 2nd attribute buffer : positions of particles' centers
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, particles_position_buffer);
 	glVertexAttribPointer(
-			1,				// attribute. No particular reason for 1, but must match the layout in the shader.
-			4,				// size : x + y + z + size => 4
-			GL_FLOAT, // type
-			GL_FALSE, // normalized?
-			0,				// stride
-			(void *)0 // array buffer offset
+			1,			
+			4,				
+			GL_FLOAT, 
+			GL_FALSE,
+			0,			
+			(void *)0
 	);
 
-	// 3rd attribute buffer : particles' colors
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, particles_color_buffer);
 	glVertexAttribPointer(
-			2,								// attribute. No particular reason for 1, but must match the layout in the shader.
-			4,								// size : r + g + b + a => 4
-			GL_UNSIGNED_BYTE, // type
-			GL_TRUE,					// normalized? *** YES, this means that the unsigned char[4] will be accessible with a vec4 (floats) in the shader ***
-			0,								// stride
-			(void *)0					// array buffer offset
+			2,
+			4,
+			GL_UNSIGNED_BYTE,
+			GL_TRUE,				
+			0,								
+			(void *)0					
 	);
 }
 
